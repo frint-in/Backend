@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 // import userRouter from './routes/user.js'
 // import commentRouter from './routes/comments.js'
-// import courseRouter from './routes/course.js'
+import CompanyRouter from './routes/Company.js'
 import authRouter from './routes/authentication.js'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
@@ -33,7 +33,7 @@ app.use(cors({origin: 'http://localhost:5173'}))
 app.use(cookieParser())
 app.use(express.json())
 app.use('/api/auth', authRouter)
-// app.use('/api/users', userRouter)
+app.use('/api/company', CompanyRouter)
 app.use('/api/internship', InternshipRouter)
 // app.use('/api/comment', commentRouter)
 

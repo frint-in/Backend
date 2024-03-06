@@ -68,7 +68,7 @@ export const signin = async(req, res) =>{
 
 //teacher
 
-export const teacher = async (req, res, next) => {
+export const Company = async (req, res, next) => {
     try {
         const user = await Users.findById({_id:req.user.id});
 
