@@ -126,6 +126,17 @@ export const findmyInternship = async(req, res)=>{
 }
 
 
+
+export const getAllIntership = async(req, res)=>{
+    try{
+        const internship = await Internship.find()
+        res.status(200).json(internship)
+    }catch(err){
+        console.log(err)
+    }
+}
+
+
 export const applicants = async(req, res)=>{
       
     try{

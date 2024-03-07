@@ -39,7 +39,9 @@ const UserSchema = new mongoose.Schema({
             default:"dmvbjskbv"
         }
     },
+
     applications: [InternshipApplicationSchema],
+
 
     role:{
         type:String,
