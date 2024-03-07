@@ -1,6 +1,20 @@
 import mongoose from 'mongoose'
 import validator from 'validator'
 
+const InternshipApplicationSchema = new mongoose.Schema({
+    internship: {
+        type: mongoose.Types.ObjectId,
+        ref: "Internship"
+    },
+    status: {
+        type: String,
+        default: "pending"
+    }
+});
+
+
+
+
 
 const UserSchema = new mongoose.Schema({
     uname: {
@@ -25,10 +39,8 @@ const UserSchema = new mongoose.Schema({
             default:"dmvbjskbv"
         }
     },
-    applications:[
-        {type: mongoose.Types.ObjectId,
-         ref: "Internship"}
-    ],
+    applications: [InternshipApplicationSchema],
+
     role:{
         type:String,
         default: "student"
