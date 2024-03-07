@@ -1,5 +1,5 @@
 import express from "express"
-import { update, deleteUser, find} from "../controllers/Users.js";
+import { update, deleteUser, find, finduserbytoken} from "../controllers/Users.js";
 import { verifyToken } from "../verifyToken.js";
 
 
@@ -18,6 +18,7 @@ router.delete("/:id", verifyToken, deleteUser)
 router.get("/find/:id", find)
 
 
+router.get("/finduserbytoken",verifyToken, finduserbytoken)
 
 //courses
 // router.get("/courses/:id", verifyToken, )

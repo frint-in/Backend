@@ -9,6 +9,17 @@ const InternshipApplicationSchema = new mongoose.Schema({
     status: {
         type: String,
         default: "pending"
+    },
+    name:{
+        type:String,
+        required: true
+    },
+    position:{
+        type:String,
+        // required: true
+    },
+    type:{
+        type:String
     }
 });
 

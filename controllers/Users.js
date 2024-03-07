@@ -47,4 +47,11 @@ export const find = async(req, res) =>{
         }
     }
 
-    
+    export const finduserbytoken = async(req, res) =>{
+        try{
+            const user= await Users.findById(req.user.id)
+            res.status(200).json(user)
+        }catch(err){
+            console.log("error in finding user")
+        }
+    } 

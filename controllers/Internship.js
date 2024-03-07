@@ -149,10 +149,10 @@ export const applicants = async(req, res)=>{
             }, {
                 new:true
             })
-            res.status(200).json(updatedInternship)
+            // res.status(200).json(updatedInternship)
 
             const updatedUser = await Users.findByIdAndUpdate(req.user.id , {
-                $push: { applications: { internship: req.params.id, status: 'pending' } },
+                $push: { applications: { internship: req.params.id, status: 'pending', name: internship.name , position: internship.position, type: internship.type } },
             }, {
                 new:true
             })

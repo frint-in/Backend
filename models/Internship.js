@@ -2,10 +2,10 @@ import mongoose from 'mongoose'
 
 
 const InternshipSchema = new mongoose.Schema({
-    userID: {
-        type: String,
-        required: true,
-    },
+    // userID: {
+    //     type: String,
+    //     required: true,
+    // },
     name: {
         type: String,
         required: true
@@ -44,7 +44,18 @@ const InternshipSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        required: true
+        required: true,
+        default: "internship"
+    },
+    position: {
+        type: String,
+        required: true,
+        default: "developer"
+    },
+    mode: {
+        type: String,
+        required: true,
+        default: "remote"
     },
     location: {
         type: String,
