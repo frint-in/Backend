@@ -69,13 +69,13 @@ export const updateCompany = async(req, res)=>{
         if(!internship){
             console.log('Internship not found')
         }
-        if(req.user.id === Internship.userID){
-            const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {
+        if(req.user.id === company.userID){
+            const  updatedCompany = await Company.findByIdAndUpdate(req.params.id , {
                 $set:req.body,
             }, {
                 new:true
             })
-            res.status(200).json(updatedInternship)
+            res.status(200).json(updatedCompany)
         }
     }catch(err){
         console.log(err)
