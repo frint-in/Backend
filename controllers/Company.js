@@ -5,6 +5,8 @@ import jwt  from "jsonwebtoken";
 import { resolveContent } from "nodemailer/lib/shared/index.js";
 import sendEmail from "../sendEmail.js";
 import crypto from "crypto"
+import Internship from "../models/Internship.js";
+
 
 
 
@@ -106,3 +108,10 @@ export const find = async(req, res) =>{
             console.log("error in finding user")
         }
     }
+
+
+
+
+
+
+

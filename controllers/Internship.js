@@ -154,11 +154,11 @@ export const applicants = async(req, res)=>{
             res.status(200).json(updatedInternship)
 
             const updatedUser = await Users.findByIdAndUpdate(req.user.id , {
-                $set:{applications: req.params.id},
+                $push: { applications: { internship: req.params.id, status: 'pending' } },
             }, {
                 new:true
             })
-            res.status(200).json(updatedInternship)
+            res.status(200).json(updatedUser)
 
         
     }catch(err){
@@ -169,4 +169,60 @@ export const applicants = async(req, res)=>{
 
 
 
+
+export const updatestudenttoapproved = async(req, res)=>{
+      
+    try {
+        const internship = await Internship.findById(req.params.id);
+        const user = await Users.findById(req.body.id); // Assuming req.body.id is the user ID as a string
+        
+        if (!internship || !user) {
+            return res.status(404).json({ message: 'Internship or user not found' });
+        }
+
+        // Update the user's application status to "approved" for the specified internship
+        user.applications.forEach(app => {
+            if (app.internship.toString() === req.params.id) {
+                app.status = 'approved';
+            }
+        });
+
+        // Save the updated user
+        const updatedUser = await user.save();
+
+        res.status(200).json(updatedUser);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+
+
+export const updatestudenttocompleted = async(req, res)=>{
+      
+    try {
+        const internship = await Internship.findById(req.params.id);
+        const user = await Users.findById(req.body.id); // Assuming req.body.id is the user ID as a string
+        
+        if (!internship || !user) {
+            return res.status(404).json({ message: 'Internship or user not found' });
+        }
+
+        // Update the user's application status to "approved" for the specified internship
+        user.applications.forEach(app => {
+            if (app.internship.toString() === req.params.id) {
+                app.status = 'completed';
+            }
+        });
+
+        // Save the updated user
+        const updatedUser = await user.save();
+
+        res.status(200).json(updatedUser);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
 
