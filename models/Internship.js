@@ -2,10 +2,10 @@ import mongoose from 'mongoose'
 
 
 const InternshipSchema = new mongoose.Schema({
-    // userID: {
-    //     type: String,
-    //     required: true,
-    // },
+    userID: {
+        type: String,
+        required: true,
+    },
     name: {
         type: String,
         required: true
@@ -38,6 +38,30 @@ const InternshipSchema = new mongoose.Schema({
         type:mongoose.Types.ObjectId,
         ref: "User"
     }],
+    deadline: {
+        type: String,
+        required: true
+    },
+    type: {
+        type: String,
+        required: true
+    },
+    location: {
+        type: String,
+        required: true
+    },
+    stipend: {
+        type: String,
+        required: true
+    },
+    experience: {
+        type: String,
+        required: true
+    },
+    skills: {
+        type: String,
+        required: true
+    },
 
 },{timestamps: true})
 

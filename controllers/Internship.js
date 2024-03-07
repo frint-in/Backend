@@ -267,4 +267,16 @@ export const getUsersWithcompletedStatusForInternship = async (req, res) => {
     }
 };
 
+export const getUsersWithapproved = async (req, res) => {
+    try {
+        const users = await Users.find({
+            'applications.status': 'approved'
+        });
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 
