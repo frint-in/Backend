@@ -37,8 +37,7 @@ const InternshipSchema = new mongoose.Schema({
     subuser:[{
         type:mongoose.Types.ObjectId,
         ref: "User"
-    }]
-    
+    }],
 
 },{timestamps: true})
 
