@@ -40,7 +40,7 @@ export const deleteUser = async(req, res) =>{
 
 export const find = async(req, res) =>{
         try{
-            const user= await findById(req.params.id)
+            const user= await Users.findById(req.params.id)
             res.status(200).json(user)
         }catch(err){
             console.log("error in finding user")

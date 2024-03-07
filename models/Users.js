@@ -12,6 +12,7 @@ const InternshipApplicationSchema = new mongoose.Schema({
     }
 });
 
+ 
 
 
 
@@ -47,6 +48,43 @@ const UserSchema = new mongoose.Schema({
         type:String,
         default: "student"
     },
+    gender: {
+        type:String,
+        
+    }, 
+   phno: {
+        type:String,
+        
+    },
+    description: {
+        type:String,
+        
+    },
+    specialisation: {
+        type:String,
+        
+    },
+    education: {
+        type:String,
+        
+    },
+    dob: {
+        type:String,
+        
+    },
+    languages: {
+        type:String,
+        
+    },
+    skills: {
+        type:String,
+        
+    },
+    resume: {
+        type:String,
+        
+    },
+
     resetpasswordtoken:{
         type:String,
     },

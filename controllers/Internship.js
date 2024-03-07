@@ -226,3 +226,47 @@ export const updatestudenttocompleted = async(req, res)=>{
     }
 }
 
+
+export const getUsersWithPendingStatusForInternship = async (req, res) => {
+    try {
+        const users = await Users.find({
+            'applications.internship': req.params.id,
+            'applications.status': 'pending'
+        });
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const getUsersWithapprovedStatusForInternship = async (req, res) => {
+    try {
+        const users = await Users.find({
+            'applications.internship': req.params.id,
+            'applications.status': 'approved'
+        });
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const getUsersWithcompletedStatusForInternship = async (req, res) => {
+    try {
+        const users = await Users.find({
+            'applications.internship': req.params.id,
+            'applications.status': 'completed'
+        });
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
