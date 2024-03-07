@@ -8,6 +8,7 @@ import authRouter from './routes/authentication.js'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import InternshipRouter from './routes/Internship.js'
+import userRouter from "./routes/Users.js"
 
 
 
@@ -35,7 +36,7 @@ app.use(express.json())
 app.use('/api/auth', authRouter)
 app.use('/api/company', CompanyRouter)
 app.use('/api/internship', InternshipRouter)
-// app.use('/api/comment', commentRouter)
+app.use('/api/user', userRouter)
 
 
 
