@@ -26,7 +26,7 @@ const UserSchema = new mongoose.Schema({
         }
     },
     applications:[
-        {type: mongoose.Types.ObjectId,
+            {type: mongoose.Types.ObjectId,
          ref: "Internship"}
     ],
     role:{
