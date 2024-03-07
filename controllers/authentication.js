@@ -63,7 +63,34 @@ export const signin = async(req, res) =>{
 
 
 
+export const signinadmin = async(req, res) =>{
+    try{
+        const user = await Users.findOne({email:req.body.email})
+        if(!user){
+            console.log('incorrect Email')
+        }
+        const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
+        if(!isCorrect){
+            console.log('incorrect password')
+        }
+        else if(user.role !== 'admin') {
+            console.log('User is not an admin')
+        }
 
+
+
+        else{
+        const {password, ...others} = user._doc
+        const token = jwt.sign({id:user._id}, process.env.JWT)
+        res.cookie("access_token", token, {
+            httpOnly:true
+        }).status(200).json({others, token})
+        }
+    }catch (err) {
+        console.log(err)
+        res.status(500).send("An error occurred");
+    }
+}
 
 
 //teacher
