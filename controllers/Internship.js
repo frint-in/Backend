@@ -34,15 +34,12 @@ export const addInternship = async (req, res) => {
         upload.single('image')(req, res, async function (err) {
 
             if (err instanceof multer.MulterError) {
-                
                 console.error(err);
                 return res.status(500).json({ message: 'Failed to upload image' });
             } else if (err) {
                 console.error(err);
                 return res.status(500).json({ message: 'Internal server error' });
             }
-
-            
 
             cloudinary.uploader.upload(req.file.path, {
                 public_id: req.body.name
@@ -54,7 +51,7 @@ export const addInternship = async (req, res) => {
 
                 console.log(result);
 
-                const newInternship = new Internship({ userID: req.user.id, imgurl: result.url, ...req.body });
+                const newInternship = new Internship({ imgurl: result.url, ...req.body });
 
                 const savedInternship = await newInternship.save();
                 res.status(200).json(savedInternship);
@@ -65,6 +62,7 @@ export const addInternship = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 }
+
 
 
 
