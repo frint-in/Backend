@@ -6,7 +6,7 @@ import { verifyToken } from "../verifyToken.js";
 const router = express.Router();
 
 // router.post("/addinternship",verifyToken, addInternship)
-router.post("/addinternship",verifyToken, addInternship)
+router.post("/addinternship",verifyToken,  addInternship)
 router.put("/:id", verifyToken,  updateInternship)
 router.delete("/:id", verifyToken, deleteInternship)
 router.get("/find/:id", findInternship) 
