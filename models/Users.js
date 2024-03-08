@@ -20,8 +20,11 @@ const InternshipApplicationSchema = new mongoose.Schema({
     },
     type:{
         type:String
+    },
+    createdApplicantAt: {
+        type: Date
     }
-});
+})
 
  
 
@@ -104,7 +107,11 @@ const UserSchema = new mongoose.Schema({
     }
 
 
-},{timestamps: true})
+},
+{
+    timestamps: true
+}
+)
 
 
 export default mongoose.model("User", UserSchema)

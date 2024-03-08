@@ -135,34 +135,77 @@ export const getAllIntership = async(req, res)=>{
 }
 
 
-export const applicants = async(req, res)=>{
+// export const applicants = async(req, res)=>{
       
-    try{
-        const internship = await Internship.findById(req.params.id)
-        const user = await Users.findById(req.user.id)
-        if(!internship){
-            console.log('Internship not found')
+//     try{
+//         const internship = await Internship.findById(req.params.id)
+//         const user = await Users.findById(req.user.id)
+//         if(!internship){
+//             console.log('Internship not found')
+//         }
+        
+//             const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {
+//                 $set:{subuser: req.user.id},
+//             }, {
+//                 new:true
+//             })
+//             // res.status(200).json(updatedInternship)
+
+//              const createdApplicationAt = new Date() 
+
+//             const updatedUser = await Users.findByIdAndUpdate(req.user.id , {
+//                 $push: { applications: { internship: req.params.id, status: 'pending', name: internship.name , position: internship.position, type: internship.type, createdApplicationAt: createdApplicationAt} },
+//             }, {
+//                 new:true
+//             })
+//             res.status(200).json(updatedUser)
+
+        
+//     }catch(err){
+//         console.log(err)
+//     }
+// }
+
+export const applicants = async (req, res) => {
+    try {
+        const internship = await Internship.findById(req.params.id);
+        const user = await Users.findById(req.user.id);
+
+        if (!internship || !user) {
+            return res.status(404).json({ message: 'Internship or User not found' });
         }
-        
-            const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {
-                $set:{subuser: req.user.id},
-            }, {
-                new:true
-            })
-            // res.status(200).json(updatedInternship)
 
-            const updatedUser = await Users.findByIdAndUpdate(req.user.id , {
-                $push: { applications: { internship: req.params.id, status: 'pending', name: internship.name , position: internship.position, type: internship.type, createdAt: new Date() } },
-            }, {
-                new:true
-            })
-            res.status(200).json(updatedUser)
+        const updatedInternship = await Internship.findByIdAndUpdate(req.params.id, {
+            $set: { subuser: req.user.id },
+        }, {
+            new: true
+        });
 
-        
-    }catch(err){
-        console.log(err)
+        // const createdApplicationAt = new Date();
+
+        const application = {
+            internship: req.params.id,
+            status: 'pending',
+            name: internship.name,
+            position: internship.position,
+            type: internship.type,
+            createdApplicantAt: new Date() // Include createdApplicationAt within the object
+        };
+
+        const updatedUser = await Users.findByIdAndUpdate(req.user.id, {
+            $push: { applications: application },
+        }, {
+            new: true
+        });
+
+        res.status(200).json(updatedUser);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
     }
-}
+};
+
 
 
 
