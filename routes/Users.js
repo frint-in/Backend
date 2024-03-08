@@ -1,5 +1,5 @@
 import express from "express"
-import { update, deleteUser, find, finduserbytoken} from "../controllers/Users.js";
+import { update, deleteUser, find, finduserbytoken, getUserWithPendingStatus} from "../controllers/Users.js";
 import { verifyToken } from "../verifyToken.js";
 
 
@@ -19,6 +19,8 @@ router.get("/find/:id", find)
 
 
 router.get("/finduserbytoken",verifyToken, finduserbytoken)
+
+router.get("/getUserWithPendingStatusForInternship",verifyToken, getUserWithPendingStatus)
 
 //courses
 // router.get("/courses/:id", verifyToken, )

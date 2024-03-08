@@ -152,7 +152,7 @@ export const applicants = async(req, res)=>{
             // res.status(200).json(updatedInternship)
 
             const updatedUser = await Users.findByIdAndUpdate(req.user.id , {
-                $push: { applications: { internship: req.params.id, status: 'pending', name: internship.name , position: internship.position, type: internship.type } },
+                $push: { applications: { internship: req.params.id, status: 'pending', name: internship.name , position: internship.position, type: internship.type, createdAt: new Date() } },
             }, {
                 new:true
             })
@@ -227,6 +227,9 @@ export const updatestudenttocompleted = async(req, res)=>{
 
 export const getUsersWithPendingStatusForInternship = async (req, res) => {
     try {
+
+        // const user = req.user
+
         const users = await Users.find({
             'applications.internship': req.params.id,
             'applications.status': 'pending'
@@ -238,6 +241,7 @@ export const getUsersWithPendingStatusForInternship = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
 
 export const getUsersWithapprovedStatusForInternship = async (req, res) => {
     try {

@@ -16,8 +16,9 @@ router.post("/updatetoapprove/:id", updatestudenttoapproved)
 router.post("/updatetocomplete/:id", updatestudenttocompleted)
 router.get("/getUsersWithPendingStatusForInternship/:id", getUsersWithPendingStatusForInternship)
 router.get("/getUsersWithapprovedStatusForInternship/:id", getUsersWithapprovedStatusForInternship)
-
 router.get("/getUsersWithcompletedStatusForInternship/:id", getUsersWithcompletedStatusForInternship )
+
+
 router.get("/getUsersWithapproved", getUsersWithapproved )
 
 
