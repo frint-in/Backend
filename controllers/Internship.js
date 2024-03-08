@@ -215,7 +215,9 @@ export const updatestudenttoapproved = async(req, res)=>{
       
     try {
         const internship = await Internship.findById(req.params.id);
-        const user = await Users.findById(req.body.id); // Assuming req.body.id is the user ID as a string
+
+
+        const user = await Users.findById(req.user.id); 
         
         if (!internship || !user) {
             return res.status(404).json({ message: 'Internship or user not found' });
@@ -244,7 +246,7 @@ export const updatestudenttocompleted = async(req, res)=>{
       
     try {
         const internship = await Internship.findById(req.params.id);
-        const user = await Users.findById(req.body.id); // Assuming req.body.id is the user ID as a string
+        const user = await Users.findById(req.user.id); // Assuming req.body.id is the user ID as a string
         
         if (!internship || !user) {
             return res.status(404).json({ message: 'Internship or user not found' });

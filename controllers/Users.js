@@ -84,12 +84,98 @@ export const find = async(req, res) =>{
                         internshipId: application.internship,
                         name: application.name,
                         position: application.position,
-                        type: application.type
+                        type: application.type,
+                        status: application.status
                     });
                 }
             });
     
             res.status(200).json(pendingInternships);
+    
+        } catch (err) {
+            console.error(err.message);
+            res.status(500).json({ message: 'Server error' });
+        }
+    };
+
+
+    export const getUserWithApprovedStatus = async (req, res) => {
+        try {
+            const approvedInternships = [];
+
+            console.log('req user???>>>>', req.user);
+
+            const user = await Users.findById(req.user.id)
+    
+            // Check if req.user is defined
+            // if (!user) {
+            //     return res.status(400).json({ message: 'User not found' });
+            // }
+    
+            // // const user = req.user;
+    
+            // // Check if user.applications is an array
+            // if (!Array.isArray(user.applications)) {
+            //     return res.status(400).json({ message: 'Invalid user data' });
+            // }
+    
+            user.applications.forEach(application => {
+                if (application.status === 'approved') {
+                    approvedInternships.push({
+                        userId: user._id,
+                        internshipId: application.internship,
+                        name: application.name,
+                        position: application.position,
+                        type: application.type,
+                        status: application.status
+                    });
+                }
+            });
+    
+            res.status(200).json(approvedInternships);
+    
+        } catch (err) {
+            console.error(err.message);
+            res.status(500).json({ message: 'Server error' });
+        }
+    };
+
+
+
+    export const getUserWithCompletedStatus = async (req, res) => {
+        try {
+            const completedInternships = [];
+
+            console.log('req user???>>>>', req.user);
+
+            const user = await Users.findById(req.user.id)
+    
+            // Check if req.user is defined
+            // if (!user) {
+            //     return res.status(400).json({ message: 'User not found' });
+            // }
+    
+            // // const user = req.user;
+    
+            // // Check if user.applications is an array
+            // if (!Array.isArray(user.applications)) {
+            //     return res.status(400).json({ message: 'Invalid user data' });
+            // }
+    
+            user.applications.forEach(application => {
+                if (application.status === 'completed') {
+                    completedInternships.push({
+                        userId: user._id,
+                        internshipId: application.internship,
+                        name: application.name,
+                        position: application.position,
+                        type: application.type,
+                        status: application.status
+                    });
+                }
+            });
+    
+            res.status(200).json(completedInternships);
     
         } catch (err) {
             console.error(err.message);
