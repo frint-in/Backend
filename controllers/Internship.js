@@ -329,3 +329,22 @@ export const getUsersWithapproved = async (req, res) => {
     }
 };
 
+
+
+export const getUsersWithInternship = async (req, res) => {
+    try {
+
+        // const user = req.user
+
+        const users = await Users.find({
+            'applications.internship': req.params.id
+           
+        });
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
