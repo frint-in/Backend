@@ -91,14 +91,19 @@ export const updateInternship = async(req, res)=>{
         if(!internship){
             console.log('Internship not found')
         }
-        if(req.user.id === Internship.userID){
+
+        // if(req.user.id === Internship.userID){
+            // get current data for this intenshipid from db
+            // check current form data for null in req.body
+            // replace null values from req.body from current data
+
             const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {
                 $set:req.body,
             }, {
                 new:true
             })
             res.status(200).json(updatedInternship)
-        }
+        // }
     }catch(err){
         console.log(err)
     }
@@ -217,7 +222,7 @@ export const updatestudenttoapproved = async(req, res)=>{
         const internship = await Internship.findById(req.params.id);
 
 
-        const user = await Users.findById(req.user.id); 
+        const user = await Users.findById(req.body.id); 
         
         if (!internship || !user) {
             return res.status(404).json({ message: 'Internship or user not found' });
@@ -246,9 +251,9 @@ export const updatestudenttocompleted = async(req, res)=>{
       
     try {
         const internship = await Internship.findById(req.params.id);
-        const user = await Users.findById(req.user.id); // Assuming req.body.id is the user ID as a string
+        const user = await Users.findById(req.body.id); // Assuming req.body.id is the user ID as a string
         
-        if (!internship || !user) {
+        if (!user) {
             return res.status(404).json({ message: 'Internship or user not found' });
         }
 

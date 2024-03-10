@@ -7,7 +7,7 @@ const router = express.Router();
 
 // router.post("/addinternship",verifyToken, addInternship)
 router.post("/addinternship",verifyToken,  addInternship)
-router.put("/:id", verifyToken,  updateInternship)
+router.put("/:id",  updateInternship)
 router.delete("/:id", verifyToken, deleteInternship)
 router.get("/find/:id", findInternship) 
 router.put("/addapplicants/:id",verifyToken, applicants)
