@@ -4,7 +4,7 @@ import Users from '../models/Users.js'
 
 
 export const update = async(req, res) =>{
-if(req.params.id === req.user.id){
+if(req.params.id){
     try{
         const updatedUser = await Users.findByIdAndUpdate(req.params.id, {
             $set:req.body
@@ -12,7 +12,7 @@ if(req.params.id === req.user.id){
         {
             new:true
         })
-        res.status(200).json("user updated")
+        res.status(200).json(updatedUser)
     }catch(err){
         console.log("err")
     }

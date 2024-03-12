@@ -1,5 +1,5 @@
 import express from "express"
-import { update, deleteUser, find, finduserbytoken, getUserWithPendingStatus, getUserWithApprovedStatus, getUserWithCompletedStatus} from "../controllers/Users.js";
+import { deleteUser, find, finduserbytoken, getUserWithPendingStatus, getUserWithApprovedStatus, getUserWithCompletedStatus, update} from "../controllers/Users.js";
 import { verifyToken } from "../verifyToken.js";
 
 
@@ -7,7 +7,7 @@ const router = express.Router();
 
 
 //update
-router.put("/:id", verifyToken, update)
+router.put("/updateuser/:id", update)
 
 
 //delete
