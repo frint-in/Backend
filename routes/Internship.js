@@ -1,5 +1,5 @@
 import express from "express"
-import { addInternship, applicants, deleteInternship, findInternship, getAllIntership, getUsersWithInternship, getUsersWithPendingStatusForInternship, getUsersWithapproved, getUsersWithapprovedStatusForInternship, getUsersWithcompletedStatusForInternship, updateInternship, updatestudenttoapproved, updatestudenttocompleted } from "../controllers/Internship.js";
+import { addInternship, applicants, deleteInternship, findInternship, getAllIntership, getUsersWithInternship, getUsersWithPendingStatusForInternship, getUsersWithapproved, getUsersWithapprovedStatusForInternship, getUsersWithcompleted, getUsersWithcompletedStatusForInternship, getUsersWithpending, updateInternship, updatestudenttoapproved, updatestudenttocompleted } from "../controllers/Internship.js";
 import { verifyToken } from "../verifyToken.js";
 
 
@@ -21,6 +21,8 @@ router.get("/getUsersWithInternship/:id", getUsersWithInternship)
 
 
 router.get("/getUsersWithapproved", getUsersWithapproved )
+router.get("/getUsersWithpending", getUsersWithpending )
+router.get("/getUsersWithcompleted", getUsersWithcompleted )
 
 
 

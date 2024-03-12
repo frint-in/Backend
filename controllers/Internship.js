@@ -335,6 +335,34 @@ export const getUsersWithapproved = async (req, res) => {
 };
 
 
+export const getUsersWithpending = async (req, res) => {
+    try {
+        const users = await Users.find({
+            'applications.status': 'pending'
+        });
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
+export const getUsersWithcompleted = async (req, res) => {
+    try {
+        const users = await Users.find({
+            'applications.status': 'completed'
+        });
+
+        res.status(200).json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
 
 export const getUsersWithInternship = async (req, res) => {
     try {
