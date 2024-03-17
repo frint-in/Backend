@@ -11,7 +11,7 @@ router.post("/signup", signup)
 router.post("/signin", signin)
 router.post("/signinadmin", signinadmin)
 // router.post("/google", )
-// router.post('/logout', logout)
+router.post('/logout', logout)
 // router.post('/v1/password/reset', resetPassword)
 // router.get('/v1/password/reset/:token', resetPass).put(resetPass)
 
