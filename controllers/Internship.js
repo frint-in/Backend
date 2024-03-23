@@ -69,6 +69,7 @@ export const addInternship = async (req, res) => {
 
 export const deleteInternship = async()=>{
     try{
+        
         const Internship = await Internship.findById(req.params.id)
         if(!Internship){
             console.log('Internship not found')
@@ -87,6 +88,7 @@ export const deleteInternship = async()=>{
 export const updateInternship = async(req, res)=>{
       
     try{
+        
         const internship = await Internship.findById(req.params.id)
         if(!internship){
             console.log('Internship not found')
