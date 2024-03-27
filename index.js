@@ -30,9 +30,9 @@ const connect = async() => {
 }
 
 app.use(cors({
-    origin: 'https://frint.in',
-    credentials: true
-  }));
+  origin: ['https://admin.frint.in', 'https://student.frint.in'],
+  credentials: true
+}));
 app.use(cookieParser())
 app.use(express.json())
 app.use('/api/auth', authRouter)
