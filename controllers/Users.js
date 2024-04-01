@@ -4,7 +4,46 @@ import Users from '../models/Users.js'
 
 
 export const update = async(req, res) =>{
+
 if(req.params.id){
+    if(req.body.avatar.url === null || req.body.resume === null ){
+    try{
+        const cunntUser = await Users.findById(req.params.id)
+        const avatar_url= req.body.avatar.url?req.body.avatar.url:cunntUser.avatar.url
+        const resume_url= req.body.resume?req.body.resume:cunntUser.resume
+        // if (req.body.avatar.url === null){
+        //     const avatar_url= cunntUser.avatar.url
+        // }
+        // else{
+        //     const avatar_url= req.body.avatar.url
+        // }
+        // if (req.body.resume === null){
+        //     const resume_url = cunntUser.resume
+        // }
+        // else{
+        //     const resume_url= req.body.resume
+        // }
+        const sexybody = {
+            ...req.body,
+            avatar:{
+                url:avatar_url,
+            },
+            resume:resume_url
+        }
+        const updatedUser = await Users.findByIdAndUpdate(req.params.id, {
+            $set:sexybody
+        },
+        {
+            new:true
+        })
+        res.status(200).json(updatedUser)
+
+    }
+    catch(err){
+        console.log(err)
+    }
+    }
+    else{
     try{
         const updatedUser = await Users.findByIdAndUpdate(req.params.id, {
             $set:req.body
@@ -14,8 +53,8 @@ if(req.params.id){
         })
         res.status(200).json(updatedUser)
     }catch(err){
-        console.log("err")
-    }
+        console.log(err)
+    }}
 
 }else {
     console.log("tokenid != userid")
