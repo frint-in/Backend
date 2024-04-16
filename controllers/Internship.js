@@ -9,6 +9,9 @@ import multer from "multer";
 
 
 import {v2 as cloudinary} from 'cloudinary';
+import { AsyncHandler } from "../utils/AsyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import Company from "../models/Company.js";
 
 dotenv.config()
 const storage = multer.diskStorage({
@@ -29,69 +32,86 @@ cloudinary.config({
 
 
 
-export const addInternship = async (req, res) => {
+export const addInternship = AsyncHandler(async (req, res) => {
     try {
         upload.single('image')(req, res, async function (err) {
 
             if (err instanceof multer.MulterError) {
                 console.error(err);
-                return res.status(500).json({ message: 'Failed to upload image' });
+                return res.status(409).json({ error: 'Failed to add image' });
             } else if (err) {
                 console.error(err);
-                return res.status(500).json({ message: 'Internal server error' });
+                return res.status(409).json({ error: 'internal server error' });
             }
 
+            if (req.file && req.file.path){
             cloudinary.uploader.upload(req.file.path, {
                 public_id: req.body.name
             }, async function (error, result) {
                 if (error) {
                     console.error(error);
-                    return res.status(500).json({ message: 'Failed to upload image to Cloudinary' });
+                    return res.status(409).json({ error: 'Image not uploaded to cloudinary' });
                 }
 
                 console.log(result);
 
                 const newInternship = new Internship({ imgurl: result.url, ...req.body });
-
+             
                 const savedInternship = await newInternship.save();
                 res.status(200).json(savedInternship);
-            });
+
+                const company = await Company.findByIdAndUpdate(
+                    req.company.id,
+                    { $push: { interships: newInternship._id } },
+                    { new: true }
+                );
+        
+                if (!company) {
+                    throw new Error('Company not found');
+                }
+
+        
+            });}
+            else{
+                return res.status(409).json({ error: 'Image path not found' });
+            }
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(err.statusCode).send(err.message);
     }
 }
+)
 
 
 
 
-
-export const deleteInternship = async()=>{
+export const deleteInternship = AsyncHandler(async()=>{
     try{
         
         const Internship = await Internship.findById(req.params.id)
         if(!Internship){
-            console.log('Internship not found')
+            
+            throw new ApiError(409, 'internship not found')
         }
         if(req.user.id === Internship.userID){
             const deletedInternship = await Internship.findByIdAndDelete(req.params.id)
             res.status(200).json(deletedInternship)
         }
     }catch(err){
-        console.log(err)
+        res.status(err.statusCode).send(err.message);
     }
-}
+})
 
 
 
-export const updateInternship = async(req, res)=>{
+export const updateInternship = AsyncHandler (async(req, res)=>{
       
     try{
         
         const internship = await Internship.findById(req.params.id)
         if(!internship){
-            console.log('Internship not found')
+            throw new ApiError(409, 'internship not found')
         }
 
         // if(req.user.id === Internship.userID){
@@ -107,9 +127,9 @@ export const updateInternship = async(req, res)=>{
             res.status(200).json(updatedInternship)
         // }
     }catch(err){
-        console.log(err)
+        res.status(err.statusCode).send(err.message);
     }
-}
+})
 
 
 export const findInternship = async(req, res)=>{

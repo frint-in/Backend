@@ -1,12 +1,12 @@
 import express from "express"
 import { addInternship, applicants, deleteInternship, findInternship, getAllIntership, getUsersWithInternship, getUsersWithPendingStatusForInternship, getUsersWithapproved, getUsersWithapprovedStatusForInternship, getUsersWithcompleted, getUsersWithcompletedStatusForInternship, getUsersWithpending, updateInternship, updatestudenttoapproved, updatestudenttocompleted } from "../controllers/Internship.js";
-import { verifyToken } from "../verifyToken.js";
+import { verifyCompanyToken, verifyToken } from "../verifyToken.js";
 
 
 const router = express.Router();
 
 // router.post("/addinternship",verifyToken, addInternship)
-router.post("/addinternship",verifyToken,  addInternship)
+router.post("/addinternship",verifyCompanyToken,  addInternship)
 router.put("/updateinternship/:id",  updateInternship)
 router.delete("/deleteinternship/:id", verifyToken, deleteInternship)
 router.get("/find/:id", findInternship) 

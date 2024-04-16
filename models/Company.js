@@ -5,11 +5,14 @@ const CompanySchema = new mongoose.Schema({
     
     name: {
         type: String,
-        required: true
-    },
+        required: true,
+        unique: true
+        },
     email:{
         type: String,
-        required: true
+        required: true,
+        unique: true
+
     },
     password: {
         type: String ,
@@ -37,8 +40,12 @@ const CompanySchema = new mongoose.Schema({
     },
     imgurl: {
         type: String,
-        required: false
-    }
+        required: true
+    },
+    internships: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Internship"
+    }],
     // subuser:[{
     //     type:mongoose.Types.ObjectId,
     //     ref: "User"
