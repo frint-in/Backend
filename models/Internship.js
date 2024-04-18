@@ -2,17 +2,14 @@ import mongoose from 'mongoose'
 
 
 const InternshipSchema = new mongoose.Schema({
-    // userID: {
-    //     type: String,
-    //     required: true,
-    // },
+
     name: {
         type: String,
         required: true
     },
-    companyName: {
-        type: String,
-        required: true
+    company: {
+        type:  mongoose.Schema.Types.ObjectId,
+        ref: "Company"
     },
     description: {
         type: String,
@@ -26,10 +23,7 @@ const InternshipSchema = new mongoose.Schema({
         type: [String],
         required: false
     },
-    location: {
-        type: String,
-        required: true
-    },
+
     phono:{
         type: Number,
         required:true
@@ -39,7 +33,7 @@ const InternshipSchema = new mongoose.Schema({
         required: false
     },
     subuser:[{
-        type:mongoose.Types.ObjectId,
+        type:mongoose.Schema.Types.ObjectId,
         ref: "User"
     }],
     deadline: {

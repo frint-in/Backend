@@ -55,7 +55,7 @@ export const addInternship = AsyncHandler(async (req, res) => {
 
                 console.log(result);
 
-                const newInternship = new Internship({ imgurl: result.url, ...req.body });
+                const newInternship = new Internship({ imgurl: result.url, ...req.body, company: req.company.id });
              
                 const savedInternship = await newInternship.save();
                 res.status(200).json(savedInternship);
@@ -65,7 +65,7 @@ export const addInternship = AsyncHandler(async (req, res) => {
                     { $push: { interships: newInternship._id } },
                     { new: true }
                 );
-        
+                
                 if (!company) {
                     throw new Error('Company not found');
                 }
@@ -134,7 +134,7 @@ export const updateInternship = AsyncHandler (async(req, res)=>{
 
 export const findInternship = async(req, res)=>{
     try{
-        const internship = await Internship.findById(req.params.id)
+        const internship = await Internship.findById(req.params.id).populate('company')
         res.status(200).json(internship)
     }catch(err){
         console.log(err)
@@ -143,7 +143,7 @@ export const findInternship = async(req, res)=>{
 
 export const findmyInternship = async(req, res)=>{
     try{
-        const internship = await Internship.findById({userID: req.user.id})
+        const internship = await Internship.findById({userID: req.user.id}).populate('company')
         res.status(200).json(internship)
     }catch(err){
         console.log(err)
@@ -154,7 +154,7 @@ export const findmyInternship = async(req, res)=>{
 
 export const getAllIntership = async(req, res)=>{
     try{
-        const internship = await Internship.find()
+        const internship = await Internship.find().populate('company')
         res.status(200).json(internship)
     }catch(err){
         console.log(err)

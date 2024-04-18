@@ -131,6 +131,7 @@ export const signinCompany = AsyncHandler(async(req, res) =>{
 
 export const updateCompany = AsyncHandler(async(req, res)=>{
 
+    console.log(req.company.id)
     const company = await Company.findById(req.company.id)
     if(!company){
         console.log('Company not found')
