@@ -62,7 +62,7 @@ export const addInternship = AsyncHandler(async (req, res) => {
 
                 const company = await Company.findByIdAndUpdate(
                     req.company.id,
-                    { $push: { interships: newInternship._id } },
+                    { $push: { internships: savedInternship._id } },
                     { new: true }
                 );
                 

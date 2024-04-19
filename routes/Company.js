@@ -1,5 +1,5 @@
 import express from "express"
-import { deleteCompany, findAllCompanies, findCompanyById, findInternshipByCompany, signinCompany, signupCompany, updateCompany } from "../controllers/Company.js";
+import { deleteCompany, findAllCompanies, findCompanyById, findInternshipByCompany, getCompany, signinCompany, signupCompany, updateCompany } from "../controllers/Company.js";
 import { verifyCompanyToken } from "../verifyToken.js";
 import { findInternship } from "../controllers/Internship.js";
 
@@ -14,7 +14,7 @@ router.post("/signup", signupCompany)
 router.post("/signin", signinCompany)
 router.put("/updatecompany", verifyCompanyToken , updateCompany )
 router.delete("/deletecompany", verifyCompanyToken , deleteCompany )
-
+router.get('/mycompany',verifyCompanyToken, getCompany)
 router.get('/allcompanies', findAllCompanies)
 router.get('/individualcompany/:id', findCompanyById)
 router.get('/findinternshipbycompany/:id', findInternshipByCompany)

@@ -193,6 +193,17 @@ export const deleteCompany = async(req, res) =>{
     
     
 }
+export const getCompany = async(req, res) =>{
+
+    try{
+        const company = await Company.findById(req.company.id).populate('internships')
+        res.status(200).json(company)
+    }catch(err){
+        res.status(err.statusCode || 500).json({ error: err.message }); 
+    }
+
+
+}
 
 
 export const findAllCompanies = async (req, res) => {
