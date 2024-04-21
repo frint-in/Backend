@@ -11,18 +11,7 @@ if(req.params.id){
         const cunntUser = await Users.findById(req.params.id)
         const avatar_url= req.body.avatar.url?req.body.avatar.url:cunntUser.avatar.url
         const resume_url= req.body.resume?req.body.resume:cunntUser.resume
-        // if (req.body.avatar.url === null){
-        //     const avatar_url= cunntUser.avatar.url
-        // }
-        // else{
-        //     const avatar_url= req.body.avatar.url
-        // }
-        // if (req.body.resume === null){
-        //     const resume_url = cunntUser.resume
-        // }
-        // else{
-        //     const resume_url= req.body.resume
-        // }
+
         const sexybody = {
             ...req.body,
             avatar:{
@@ -40,7 +29,8 @@ if(req.params.id){
 
     }
     catch(err){
-        console.log(err)
+        res.status(err.statusCode).send(err.message);
+
     }
     }
     else{
@@ -53,7 +43,7 @@ if(req.params.id){
         })
         res.status(200).json(updatedUser)
     }catch(err){
-        console.log(err)
+        res.status(err.statusCode).send(err.message);
     }}
 
 }else {

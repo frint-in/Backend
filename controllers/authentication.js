@@ -5,6 +5,8 @@ import jwt  from "jsonwebtoken";
 import { resolveContent } from "nodemailer/lib/shared/index.js";
 import sendEmail from "../sendEmail.js";
 import crypto from "crypto"
+import { ApiError } from "../utils/ApiError.js";
+import { AsyncHandler } from "../utils/AsyncHandler.js";
 
 
 
@@ -12,7 +14,7 @@ import crypto from "crypto"
 //student
 
 
-export const signup = async(req, res) =>{
+export const signup = AsyncHandler(async(req, res) =>{
     try{
         const password = req.body.password.toString()
         const salt = bcrypt.genSaltSync(10);
@@ -24,23 +26,23 @@ export const signup = async(req, res) =>{
         res.status(200).send("User created")
     }catch (err) {
         console.log(err)
-        res.status(500).send("An error occurred");
+        res.status(err.statusCode).send(err.message);
     }
-}
+})
 
 
 
 //signin
 
-export const signin = async(req, res) =>{
+export const signin = AsyncHandler(async(req, res) =>{
     try{
         const user = await Users.findOne({email:req.body.email})
         if(!user){
-            console.log('incorrect Email')
+            throw new ApiError(409, 'incorrect email')
         }
         const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
         if(!isCorrect){
-            console.log('incorrect password')
+            throw new ApiError(409, 'incorrect password')
         }
         
 
@@ -55,9 +57,9 @@ export const signin = async(req, res) =>{
         }
     }catch (err) {
         console.log(err)
-        res.status(500).send("An error occurred");
+        res.status(err.statusCode).send(err.message);
     }
-}
+})
 
 
 
@@ -67,14 +69,14 @@ export const signinadmin = async(req, res) =>{
     try{
         const user = await Users.findOne({email:req.body.email})
         if(!user){
-            console.log('incorrect Email')
+            throw new ApiError(409, 'incorrect email')
         }
         const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
         if(!isCorrect){
-            console.log('incorrect password')
+            throw new ApiError(409, 'incorrect password')
         }
         else if(user.role !== 'admin') {
-            console.log('User is not an admin')
+            throw new ApiError(409, 'user is not an admin')
         }
 
 
@@ -88,7 +90,7 @@ export const signinadmin = async(req, res) =>{
         }
     }catch (err) {
         console.log(err)
-        res.status(500).send("An error occurred");
+        res.status(err.statusCode).send(err.message);
     }
 }
 
@@ -99,7 +101,7 @@ export const Company = async (req, res, next) => {
     try {
         const user = await Users.findById({_id:req.user.id});
 
-        if (!user || user.role !== "teacher") {
+        if (!user || user.role !== "company") {
             console.log("You are not authorized to make changes.");
             return res.status(403).json({ message: "You are not authorized to make changes." });
         }
