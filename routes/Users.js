@@ -1,5 +1,5 @@
 import express from "express"
-import { deleteUser, find, finduserbytoken, getUserWithPendingStatus, getUserWithApprovedStatus, getUserWithCompletedStatus, updateUser} from "../controllers/Users.js";
+import { deleteUser, find, finduserbytoken, getUserWithPendingStatus, getUserWithApprovedStatus, getUserWithCompletedStatus, updateUser, Seminar, getseminaruser} from "../controllers/Users.js";
 import { verifyToken } from "../verifyToken.js";
 
 
@@ -8,6 +8,10 @@ const router = express.Router();
 
 //update
 router.put("/updateuser",verifyToken,  updateUser)
+router.put("/seminar",verifyToken,  Seminar)
+router.get("/getseminaruser", getseminaruser)
+
+
 
 
 //delete

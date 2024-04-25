@@ -63,13 +63,13 @@ export const updateUser = (async(req, res)=>{
         
     });}
     else{
-        console.log('failed to upload image')
-        // const  updateduser = await Users.findByIdAndUpdate(req.user.id , {
-        //     $set: req.body,
-        // }, {
-        //     new:true
-        // })
-        // res.status(200).json(updateduser)
+        // console.log('failed to upload image')
+        const  updateduser = await Users.findByIdAndUpdate(req.user.id , {
+            $set: req.body,
+        }, {
+            new:true
+        })
+        res.status(200).json(updateduser)
     }
 })
     }catch(err){
@@ -243,3 +243,23 @@ export const find = async(req, res) =>{
     };
 
     
+
+    export const Seminar = async(req, res) => {
+        const updatedUser = await Users.findByIdAndUpdate(req.user.id, {
+            $set: { seminar: 'true' },
+        }, {
+            new: true
+        });
+
+        res.status(200).json(updatedUser);
+    }
+
+    export const getseminaruser = async (req, res) => {
+        try {
+            const users = await Users.find({ seminar: true });
+            res.status(200).json(users);
+        } catch (error) {
+            console.error(error.message);
+            res.status(500).json({ message: 'Server error' });
+        }
+    };

@@ -80,6 +80,10 @@ const UserSchema = new mongoose.Schema({
         type:String,
         
     },
+    seminar: {
+        type: String,
+        default: "false"
+    },
 
 
     resetpasswordtoken:{
