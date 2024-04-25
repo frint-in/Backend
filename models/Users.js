@@ -10,20 +10,7 @@ const InternshipApplicationSchema = new mongoose.Schema({
         type: String,
         default: "pending"
     },
-    name:{
-        type:String,
-        required: true
-    },
-    position:{
-        type:String,
-        // required: true
-    },
-    type:{
-        type:String
-    },
-    createdApplicantAt: {
-        type: Date
-    }
+   
 })
 
  
@@ -35,7 +22,6 @@ const UserSchema = new mongoose.Schema({
     uname: {
         type: String,
         required: true,
-        unique: true
     },
     email: {
         type: String,
@@ -48,11 +34,7 @@ const UserSchema = new mongoose.Schema({
         required: true
     },
     avatar: {
-
-        url:{
-            type:String,
-            default:"dmvbjskbv"
-        }
+        type: String,
     },
 
     applications: [InternshipApplicationSchema],
@@ -98,6 +80,7 @@ const UserSchema = new mongoose.Schema({
         type:String,
         
     },
+
 
     resetpasswordtoken:{
         type:String,

@@ -1,55 +1,85 @@
 import mongoose from 'mongoose'
 import Users from '../models/Users.js'
+import multer from 'multer';
+import { AsyncHandler } from '../utils/AsyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import dotenv from 'dotenv'
+import {v2 as cloudinary} from 'cloudinary';
 
 
+dotenv.config()
 
-export const update = async(req, res) =>{
-
-if(req.params.id){
-    if(req.body.avatar.url === null || req.body.resume === null ){
-    try{
-        const cunntUser = await Users.findById(req.params.id)
-        const avatar_url= req.body.avatar.url?req.body.avatar.url:cunntUser.avatar.url
-        const resume_url= req.body.resume?req.body.resume:cunntUser.resume
-
-        const sexybody = {
-            ...req.body,
-            avatar:{
-                url:avatar_url,
-            },
-            resume:resume_url
-        }
-        const updatedUser = await Users.findByIdAndUpdate(req.params.id, {
-            $set:sexybody
-        },
-        {
-            new:true
-        })
-        res.status(200).json(updatedUser)
-
+const storage = multer.diskStorage({
+    filename: function(req, file, cb){
+        cb(null, file.originalname)
     }
-    catch(err){
-        res.status(err.statusCode).send(err.message);
+});
+const upload = multer({ storage: storage });
 
+
+          
+cloudinary.config({ 
+  cloud_name: process.env.cloud_name, 
+  api_key: process.env.api_key, 
+  api_secret: process.env.api_secret 
+});
+
+
+export const updateUser = (async(req, res)=>{
+
+    console.log(req.user.id)
+    const user = await Users.findById(req.user.id)
+    if(!user){
+        console.log('Company not found')
     }
-    }
+        try {
+            upload.single('image')(req, res, async function (err) {
+    
+                if (err instanceof multer.MulterError) {
+                    console.error(err);
+                    return res.status(409).json({ error: 'Failed to add image' });
+                } else if (err) {
+                    console.error(err);
+                    return res.status(409).json({ error: 'internal server error' });
+                }
+    
+                if (req.file && req.file.path){
+                cloudinary.uploader.upload(req.file.path, {
+                    public_id: req.body.name
+                }, async function (error, result) {
+                    if (error) {
+                        console.error(error);
+                        return res.status(409).json({ error: 'Image not uploaded to cloudinary' });
+                    }
+    
+                    console.log(result);
+
+            const  updateduser = await Users.findByIdAndUpdate(req.user.id , {
+                $set: { ...req.body, avatar: result.secure_url },
+            }, {
+                new:true
+            })
+            res.status(200).json(updateduser)
+        
+    });}
     else{
-    try{
-        const updatedUser = await Users.findByIdAndUpdate(req.params.id, {
-            $set:req.body
-        },
-        {
-            new:true
-        })
-        res.status(200).json(updatedUser)
+        console.log('failed to upload image')
+        // const  updateduser = await Users.findByIdAndUpdate(req.user.id , {
+        //     $set: req.body,
+        // }, {
+        //     new:true
+        // })
+        // res.status(200).json(updateduser)
+    }
+})
     }catch(err){
-        res.status(err.statusCode).send(err.message);
-    }}
+        console.log(err)
+        res.status(err.statusCode || 500).json({ error: err.message });    
+    }
 
-}else {
-    console.log("tokenid != userid")
-}
-}
+    }
+)
+
 
 
 export const deleteUser = async(req, res) =>{
@@ -78,7 +108,7 @@ export const find = async(req, res) =>{
 
     export const finduserbytoken = async(req, res) =>{
         try{
-            const user= await Users.findById(req.user.id)
+            const user= await Users.findById(req.user.id).populate('applications.internship')
             res.status(200).json(user)
         }catch(err){
             console.log("error in finding user")
@@ -90,7 +120,7 @@ export const find = async(req, res) =>{
         try {
             const pendingInternships = [];
 
-            console.log('req user???>>>>', req.user);
+            // console.log('req user???>>>>', req.user);
 
             const user = await Users.findById(req.user.id)
     
@@ -211,4 +241,5 @@ export const find = async(req, res) =>{
             res.status(500).json({ message: 'Server error' });
         }
     };
+
     

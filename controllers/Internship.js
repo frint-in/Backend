@@ -213,10 +213,6 @@ export const applicants = async (req, res) => {
         const application = {
             internship: req.params.id,
             status: 'pending',
-            name: internship.name,
-            position: internship.position,
-            type: internship.type,
-            createdApplicantAt: new Date() // Include createdApplicationAt within the object
         };
 
         const updatedUser = await Users.findByIdAndUpdate(req.user.id, {
@@ -242,11 +238,9 @@ export const updatestudenttoapproved = async(req, res)=>{
       
     try {
         const internship = await Internship.findById(req.params.id);
-
-
-        const user = await Users.findById(req.body.id); 
+        const user = await Users.findById(req.body.id); // Assuming req.body.id is the user ID as a string
         
-        if (!internship || !user) {
+        if (!user) {
             return res.status(404).json({ message: 'Internship or user not found' });
         }
 
@@ -295,6 +289,9 @@ export const updatestudenttocompleted = async(req, res)=>{
         res.status(500).json({ message: 'Server error' });
     }
 }
+
+
+
 
 
 export const getUsersWithPendingStatusForInternship = async (req, res) => {
