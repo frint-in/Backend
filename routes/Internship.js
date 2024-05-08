@@ -8,7 +8,7 @@ const router = express.Router();
 // router.post("/addinternship",verifyToken, addInternship)
 router.post("/addinternship",verifyCompanyToken,  addInternship)
 router.put("/updateinternship/:id",  updateInternship)
-router.delete("/deleteinternship/:id", verifyToken, deleteInternship)
+router.delete("/deleteinternship/:id", deleteInternship)
 router.get("/find/:id", findInternship) 
 router.put("/addapplicants/:id",verifyToken, applicants)
 router.get("/all", getAllIntership)

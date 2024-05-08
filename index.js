@@ -31,7 +31,7 @@ const connect = async() => {
 }
 
 app.use(cors({
-  origin: ['https://admin.frint.in','https://company.frint.in', 'https://student.frint.in','https://frint.in', 'http://localhost:5173', 'http://localhost:5174'],
+  origin: ['https://admin.frint.in','https://company.frint.in', 'https://student.frint.in','https://frint.in','https://www.admin.frint.in','https://www.company.frint.in', 'https://www.student.frint.in','https://www.frint.in', 'http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 app.use(cookieParser())

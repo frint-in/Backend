@@ -9,7 +9,11 @@ const InternshipSchema = new mongoose.Schema({
     },
     company: {
         type:  mongoose.Schema.Types.ObjectId,
-        ref: "Company"
+        ref: "Company",
+    },
+    companyName: {
+        type: String,
+        required: true
     },
     description: {
         type: String,
@@ -20,7 +24,7 @@ const InternshipSchema = new mongoose.Schema({
         required: false
     },
     catagories: {
-        type: [String],
+        type: String,
         required: false
     },
 
