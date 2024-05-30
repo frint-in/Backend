@@ -7,6 +7,7 @@ import sendEmail from "../sendEmail.js";
 import crypto from "crypto"
 import { ApiError } from "../utils/ApiError.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
+import { generateRandomString } from "../utils/Oauth.js";
 
 
 
@@ -26,13 +27,86 @@ export const signup = AsyncHandler(async(req, res) =>{
         res.status(200).send("User created")
     }catch (err) {
         console.log(err)
-        res.status(err.statusCode).send(err.message);
+        res.status(409).send(err.message);
+    }
+})
+
+export const signupGoogle = AsyncHandler(async(req, res) =>{
+    try{
+        const password_lol = generateRandomString(8)
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(password_lol, salt);
+        const newUser = new Users({...req.body, password: hash})
+        await newUser.save()
+        res.status(200).send("User created")
+        // const user = await Users.findOne({email:req.body.email})
+        // const {password, ...others} = user._doc
+        // console.log(user)
+        // console.log(user._id)
+        // const token = jwt.sign({id:user._id}, process.env.JWT)
+        // console.log(first)
+        // res.cookie("access_token", token, {
+        //     httpOnly:true
+        // }).status(200).json({others, token})
+    }catch (err) {
+        console.log(err)
+        res.status(409).send(err.message);
     }
 })
 
 
-
 //signin
+
+// export const signinGoogle = AsyncHandler(async(req, res) =>{
+//     try{
+//         const user = await Users.findOne({email:req.body.email})
+//         // const token = req.body.access_token
+//         if(!user){
+//             throw new ApiError(409, 'incorrect email')
+//         }
+//         // const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
+//         // if(!isCorrect){
+//         //     throw new ApiError(409, 'incorrect password')
+//         // }        
+//         // else{
+//         const {password, ...others} = user._doc
+//         const token = jwt.sign({id:user._id}, process.env.JWT)
+//         res.cookie("access_token", token, {
+//             httpOnly:true
+//         }).status(200).json({others, token})
+//         // }
+//     }catch (err) {
+//         console.log(err)
+//         res.status(err.statusCode).send(err.message);
+//     }
+// })
+
+export const signinGoogle = AsyncHandler(async(req, res) =>{
+    try{
+        const user = await Users.findOne({email:req.body.email})
+        if(!user){
+            throw new ApiError(409, 'incorrect email')
+        }
+        // const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
+        // if(!isCorrect){
+        //     throw new ApiError(409, 'incorrect password')
+        // }
+        
+
+
+
+      
+        const {password, ...others} = user._doc
+        const token = jwt.sign({id:user._id}, process.env.JWT)
+        res.cookie("access_token", token, {
+            httpOnly:true
+        }).status(200).json({others, token})
+        
+    }catch (err) {
+        console.log(err)
+        res.status(err.statusCode).send(err.message);
+    }
+})
 
 export const signin = AsyncHandler(async(req, res) =>{
     try{
@@ -60,8 +134,6 @@ export const signin = AsyncHandler(async(req, res) =>{
         res.status(err.statusCode).send(err.message);
     }
 })
-
-
 
 
 

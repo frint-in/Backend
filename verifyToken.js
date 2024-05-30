@@ -10,6 +10,7 @@ export const verifyToken = (req, res, next) => {
 
    jwt.verify(token, process.env.JWT, (err, user) => {
     if (err){
+        
         return res.status(401).json({ error: 'Error in verifying token' });
     }
     else{
