@@ -124,7 +124,8 @@ export const updateInternship = AsyncHandler (async(req, res)=>{
             }, {
                 new:true
             })
-            res.status(200).json(updatedInternship)
+            // res.status(200).json(updatedInternship)
+            res.status(200).json({message: "intership updated successfully", updatedInternship})
         // }
     }catch(err){
         res.status(err.statusCode).send(err.message);
@@ -228,7 +229,6 @@ export const applicants = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
 
 
 

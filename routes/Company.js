@@ -11,7 +11,9 @@ const router = express.Router();
 
 
 router.post("/signup", signupCompany)
+
 router.post("/signin", signinCompany)
+
 router.put("/updatecompany", verifyCompanyToken , updateCompany )
 router.delete("/deletecompany", verifyCompanyToken , deleteCompany )
 router.get('/mycompany',verifyCompanyToken, getCompany)

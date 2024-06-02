@@ -7,13 +7,22 @@ const router = express.Router();
 
 // router.post("/addinternship",verifyToken, addInternship)
 router.post("/addinternship",verifyCompanyToken,  addInternship)
+
+
+//update and delete internship doesn't use authorization, need to fix
 router.put("/updateinternship/:id",  updateInternship)
 router.delete("/deleteinternship/:id", deleteInternship)
 router.get("/find/:id", findInternship) 
 router.put("/addapplicants/:id",verifyToken, applicants)
 router.get("/all", getAllIntership)
-router.put("/updatetoapprove/:id",verifyToken, updatestudenttoapproved)
-router.put("/updatetocomplete/:id", verifyToken, updatestudenttocompleted)
+
+
+//admin actions to approve or hire an intern, skeptical about verifyToken function
+// router.put("/updatetoapprove/:id",verifyToken, updatestudenttoapproved)
+// router.put("/updatetocomplete/:id", verifyToken, updatestudenttocompleted)
+router.put("/updatetoapprove/:id",verifyCompanyToken, updatestudenttoapproved)
+router.put("/updatetocomplete/:id", verifyCompanyToken, updatestudenttocompleted)
+
 router.get("/getUsersWithPendingStatusForInternship/:id", getUsersWithPendingStatusForInternship)
 router.get("/getUsersWithapprovedStatusForInternship/:id", getUsersWithapprovedStatusForInternship)
 router.get("/getUsersWithcompletedStatusForInternship/:id", getUsersWithcompletedStatusForInternship )
