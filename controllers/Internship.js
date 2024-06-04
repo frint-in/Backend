@@ -60,6 +60,7 @@ export const addInternship = AsyncHandler(async (req, res) => {
                 const savedInternship = await newInternship.save();
                 res.status(200).json(savedInternship);
 
+                //new: true ensures that the updated document after the id push is returned
                 const company = await Company.findByIdAndUpdate(
                     req.company.id,
                     { $push: { internships: savedInternship._id } },
@@ -203,6 +204,7 @@ export const applicants = async (req, res) => {
             return res.status(404).json({ message: 'Internship or User not found' });
         }
 
+        //Doubt: what is the use of updating subuser after every applicant that applies to an internship?
         const updatedInternship = await Internship.findByIdAndUpdate(req.params.id, {
             $set: { subuser: req.user.id },
         }, {

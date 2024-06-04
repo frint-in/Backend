@@ -13,6 +13,7 @@ router.post("/addinternship",verifyCompanyToken,  addInternship)
 router.put("/updateinternship/:id",  updateInternship)
 router.delete("/deleteinternship/:id", deleteInternship)
 router.get("/find/:id", findInternship) 
+//student applying for internship in student dashboard
 router.put("/addapplicants/:id",verifyToken, applicants)
 router.get("/all", getAllIntership)
 
