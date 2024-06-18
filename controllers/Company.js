@@ -62,7 +62,8 @@ export const signupCompany = AsyncHandler(async(req, res) =>{
 
             if (req.file && req.file.path){
             cloudinary.uploader.upload(req.file.path, {
-                public_id: req.body.name
+                public_id: req.body.name,
+                timeout: 120000
             }, async function (error, result) {
                 if (error) {
                     console.error(error);
