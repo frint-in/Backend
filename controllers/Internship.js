@@ -2,7 +2,7 @@ import Users from "../models/Users.js";
 import Internship from "../models/Internship.js";
 import dotenv from 'dotenv'
 import multer from "multer";
-
+import {Storage} from '@google-cloud/storage'
 
 
 
@@ -14,14 +14,9 @@ import { ApiError } from "../utils/ApiError.js";
 import Company from "../models/Company.js";
 
 dotenv.config()
-const storage = multer.diskStorage({
-    filename: function(req, file, cb){
-        cb(null, file.originalname)
-    }
-});
-const upload = multer({ storage: storage });
-
-
+const upload = multer({
+    storage: multer.memoryStorage()
+})
           
 cloudinary.config({ 
   cloud_name: process.env.cloud_name, 
@@ -30,61 +25,159 @@ cloudinary.config({
 });
 
 
+//cloud storage connect 
+const storageGoogle = new Storage({
+    keyFilename: 'key.json'
+})
 
+
+//bucket initialization 
+const bucketName = 'frint-bucket'
+const bucket = storageGoogle.bucket(bucketName)
+
+
+
+
+
+
+// export const addInternship = AsyncHandler(async (req, res) => {
+//     try {
+//         upload.single('image')(req, res, async function (err) {
+
+//             //error handling
+//             if (err instanceof multer.MulterError) {
+//                 console.error(err);
+//                 return res.status(409).json({ error: 'Failed to add image' });
+//             } else if (err) {
+//                 console.error(err);
+//                 return res.status(409).json({ error: 'internal server error' });
+//             }
+
+//             //google storage
+//             const file = req.file
+//             if(!file){
+//                 console.log('no file found');
+                
+//                 res.status(401).send('No file uploaded')
+//             }
+
+
+
+//             if (req.file && req.file.path){
+//             cloudinary.uploader.upload(req.file.path, {
+//                 public_id: req.body.name
+//             }, async function (error, result) {
+//                 if (error) {
+//                     console.error(error);
+//                     return res.status(409).json({ error: 'Image not uploaded to cloudinary' });
+//                 }       
+
+//                 console.log(result);
+
+//                 const newInternship = new Internship({ imgurl: result.url, ...req.body, company: req.company.id });
+             
+//                 const savedInternship = await newInternship.save();
+//                 res.status(200).json(savedInternship);
+
+//                 //new: true ensures that the updated document after the id push is returned
+//                 const company = await Company.findByIdAndUpdate(
+//                     req.company.id,
+//                     { $push: { internships: savedInternship._id } },
+//                     { new: true }
+//                 );
+                
+//                 if (!company) {
+//                     throw new Error('Company not found');
+//                 }
+
+        
+//             });}
+//             else{
+//                 return res.status(409).json({ error: 'Image path not found' });
+//             }
+//         });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(err.statusCode).send(err.message);
+//     }
+// }
+// )
+
+//google cloud storage implementation
 
 export const addInternship = AsyncHandler(async (req, res) => {
     try {
         upload.single('image')(req, res, async function (err) {
 
+            // Error handling
             if (err instanceof multer.MulterError) {
+
+                console.log('error in multer>>>>>>>>>>>>>');
                 console.error(err);
                 return res.status(409).json({ error: 'Failed to add image' });
             } else if (err) {
+                console.log("multer internal server error>>>>>>>>");
                 console.error(err);
-                return res.status(409).json({ error: 'internal server error' });
+                return res.status(409).json({ error: 'Internal server error' });
             }
 
-            if (req.file && req.file.path){
-            cloudinary.uploader.upload(req.file.path, {
-                public_id: req.body.name
-            }, async function (error, result) {
-                if (error) {
-                    console.error(error);
-                    return res.status(409).json({ error: 'Image not uploaded to cloudinary' });
-                }
+            // Google Cloud Storage
 
-                console.log(result);
+            console.log("req body in add internship>>>>", req.body);
 
-                const newInternship = new Internship({ imgurl: result.url, ...req.body, company: req.company.id });
-             
+ ;
+            const file = req.file;
+            if (!file) {
+                console.log('No file found');
+                return res.status(400).send('No file uploaded');
+            }
+
+            const fileName = Date.now() + "-" + file.originalname;
+            const blob = bucket.file(fileName);
+            const blobStream = blob.createWriteStream({
+                metadata: {
+                    contentType: file.mimetype
+                },
+                public: true
+                
+            });
+
+            blobStream.on('error', (err) => {
+                console.error('Blob stream error', err);
+                return res.status(500).send(`Error uploading file: ${err}`);
+            });
+
+            blobStream.on('finish', async () => {
+
+                // Construct the public URL
+                const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+
+                // Create a new Internship with the image URL
+                const newInternship = new Internship({ imgurl: publicUrl, ...req.body, company: req.company.id });
                 const savedInternship = await newInternship.save();
                 res.status(200).json(savedInternship);
 
-                //new: true ensures that the updated document after the id push is returned
+                // Update the company with the new internship
                 const company = await Company.findByIdAndUpdate(
                     req.company.id,
                     { $push: { internships: savedInternship._id } },
                     { new: true }
                 );
-                
+
                 if (!company) {
                     throw new Error('Company not found');
                 }
+            });
 
-        
-            });}
-            else{
-                return res.status(409).json({ error: 'Image path not found' });
-            }
+            blobStream.end(file.buffer);
         });
     } catch (err) {
         console.error(err);
-        res.status(err.statusCode).send(err.message);
+        console.log("final error>>>>>>>>>>>>>>>>>");
+        res.status(500).send(err.message);
     }
-}
-)
-
-
+});
 
 
 export const deleteInternship = AsyncHandler(async()=>{
@@ -106,32 +199,210 @@ export const deleteInternship = AsyncHandler(async()=>{
 
 
 
-export const updateInternship = AsyncHandler (async(req, res)=>{
+// export const updateInternship = AsyncHandler (async(req, res)=>{
       
-    try{
+//     try{
         
-        const internship = await Internship.findById(req.params.id)
-        if(!internship){
-            throw new ApiError(409, 'internship not found')
+//         const internship = await Internship.findById(req.params.id)
+//         console.log("internship before update>>>>", internship);
+//         if(!internship){
+//             throw new ApiError(409, 'internship not found')
+//         }
+
+//         const internshipImgUrl = internship.imgurl
+
+//         const oldFileName = internshipImgUrl.split('/').pop();
+//         const newFile = req.file
+
+//         console.log("req body>>>>>>>>>>>", req.body);
+//         console.log("req file>>>>>>>>>>>", req.file);
+
+//         console.log("oldFilename>>>>>>>>", oldFileName);
+//       const newFileName = Date.now() + "-" + newFile?.originalname
+//       if (newFile) {
+//           // Delete the old file
+//           const oldFile = bucket.file(oldFileName);
+
+//           console.log("old file name from bucket selected>>>>", oldFile);
+//           await oldFile.delete();
+      
+
+
+//           // Upload the new file with the new name
+//       const blob = bucket.file(newFileName);
+//       const blobStream = blob.createWriteStream({
+//         metadata: {
+//           contentType: newFile.mimetype
+//         },
+//         public: true
+//       });
+  
+//       blobStream.on('error', (err) => {
+//         res.status(500).send(`Error uploading file: ${err}`);
+//       });
+  
+//       blobStream.on('finish', async () => {
+
+//             // Construct the public URL
+//             const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+
+//         const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {...req.body, imgurl:publicUrl })
+//         // res.status(200).json(updatedInternship)
+//         res.status(200).json({message: "intership updated successfully", updatedInternship})
+
+        
+//       });
+  
+//       blobStream.end(newFile.buffer);
+
+  
+//       }else{
+
+//                 const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {
+//                   $set:req.body,
+//               }, {
+//                   new:true
+//               })
+
+//               console.log("updated internship>>>>>", updatedInternship);
+//               res.status(200).json({message: "intership updated successfully", updatedInternship})
+//       }
+//     // res.status(200).json(updatedInternship)
+
+
+//         // if(req.user.id === Internship.userID){
+//             // get current data for this intenshipid from db
+//             // check current form data for null in req.body
+//             // replace null values from req.body from current data
+
+
+//         // }
+//     }catch(err){
+//         res.status(err.statusCode).send(err.message);
+//     }
+// })
+
+
+export const updateInternship = AsyncHandler(async (req, res) => {
+    try {
+        upload.single('image')(req, res, async function (err) {
+
+            console.log('1');
+            // Error handling
+            if (err instanceof multer.MulterError) {
+
+            console.log('2');
+
+                console.error(err);
+                return res.status(409).json({ error: 'Failed to add image' });
+            } else if (err) {
+
+            console.log('3');
+
+                console.error(err);
+                return res.status(409).json({ error: 'Internal server error' });
+            }
+
+
+            console.log('4');
+
+
+            // Google Cloud Storage
+
+            console.log("req body in edit internship>>>>", req.body);
+            console.log('5 body');
+
+
+      const internship = await Internship.findById(req.params.id);
+      console.log("internship before update>>>>", internship);
+      if (!internship) {
+        throw new ApiError(409, 'internship not found');
+      }
+  
+      const internshipImgUrl = internship.imgurl;
+      const oldFileName = internshipImgUrl.split('/').pop();
+      const newFile = req.file;
+  
+      console.log("req body>>>>>>>>>>>", req.body);
+      console.log("req file>>>>>>>>>>>", req.file);
+      console.log("req imgurl>>>>>>>>>>>", req.imgurl);
+      console.log("oldFilename>>>>>>>>", oldFileName);
+  
+      const newFileName = Date.now() + "-" + newFile?.originalname;
+
+
+      console.log('5 1');
+
+      if (newFile) {
+        console.log('6 main 1');
+
+        // Delete the old file
+        const oldFile = bucket.file(oldFileName);
+
+        console.log('6 main 2');
+
+        console.log("old file name from bucket selected>>>>", oldFile);
+        await oldFile.delete();
+
+        console.log('6 main 3');
+
+  
+        // Upload the new file with the new name
+        const blob = bucket.file(newFileName);
+        const blobStream = blob.createWriteStream({
+          metadata: {
+            contentType: newFile.mimetype
+          },
+          public: true
+        });
+
+        console.log('6 main 4');
+
+  
+        blobStream.on('error', (err) => {
+          res.status(500).send(`Error uploading file: ${err}`);
+        });
+  
+        blobStream.on('finish', async () => {
+          // Construct the public URL
+          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+          const updatedInternship = await Internship.findByIdAndUpdate(req.params.id, {
+            ...req.body,
+            imgurl: publicUrl
+          }, {
+            new: true
+          });
+  
+          res.status(200).json({ message: "Internship updated successfully", updatedInternship });
+        });
+  
+        blobStream.end(newFile.buffer);
+      } else {
+
+        try {
+            
+        console.log('nigg1 ');
+
+        const updatedInternship = await Internship.findByIdAndUpdate(req.params.id, {
+          $set: req.body,
+        }, {
+          new: true
+        });
+  
+        console.log("updated internship>>>>>", updatedInternship);
+        res.status(200).json({ message: "Internship updated successfully", updatedInternship });
+        } catch (err) {
+            console.log('error while updating in else block');
+            console.error('the error as follows>>>>>>>' ,err)
         }
 
-        // if(req.user.id === Internship.userID){
-            // get current data for this intenshipid from db
-            // check current form data for null in req.body
-            // replace null values from req.body from current data
+      }
+    });
 
-            const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {
-                $set:req.body,
-            }, {
-                new:true
-            })
-            // res.status(200).json(updatedInternship)
-            res.status(200).json({message: "intership updated successfully", updatedInternship})
-        // }
-    }catch(err){
-        res.status(err.statusCode).send(err.message);
+    } catch (err) {
+      res.status(err.statusCode || 500).send(err.message);
     }
-})
+  });
 
 
 export const findInternship = async(req, res)=>{
