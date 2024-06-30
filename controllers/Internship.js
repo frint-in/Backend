@@ -41,7 +41,9 @@ const storageGoogle = new Storage({
       client_x509_cert_url: process.env.GCP_CLIENT_X509_CERT_URL,
       universe_domain: process.env.GCP_UNIVERSE_DOMAIN
     }
+
 })
+
 
 
 //bucket initialization 
@@ -134,19 +136,26 @@ export const addInternship = AsyncHandler(async (req, res) => {
                 return res.status(409).json({ error: 'Internal server error' });
             }
 
-            // Google Cloud Storage
-
+            
             console.log("req body in add internship>>>>", req.body);
-
- ;
+            
+            ;
             const file = req.file;
             if (!file) {
                 console.log('No file found');
                 return res.status(400).send('No file uploaded');
             }
-
+                
+                console.log('req file>>>>>>>>>.', req.file);
+                
+                // Google Cloud Storage
             const fileName = Date.now() + "-" + file.originalname;
+
+
+            console.log('1');
             const blob = bucket.file(fileName);
+
+            console.log('2');
             const blobStream = blob.createWriteStream({
                 metadata: {
                     contentType: file.mimetype
@@ -155,12 +164,16 @@ export const addInternship = AsyncHandler(async (req, res) => {
                 
             });
 
+            console.log('3');
+
             blobStream.on('error', (err) => {
+            console.log('4');
                 console.error('Blob stream error', err);
                 return res.status(500).send(`Error uploading file: ${err}`);
             });
 
             blobStream.on('finish', async () => {
+                console.log('5');
 
                 // Construct the public URL
                 const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
