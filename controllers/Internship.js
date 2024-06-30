@@ -180,20 +180,21 @@ export const addInternship = AsyncHandler(async (req, res) => {
 });
 
 
-export const deleteInternship = AsyncHandler(async()=>{
+export const deleteInternship = AsyncHandler(async(req, res)=>{
     try{
         
-        const Internship = await Internship.findById(req.params.id)
-        if(!Internship){
+        const internship = await Internship.findById(req.params.id)
+        if(!internship){
             
             throw new ApiError(409, 'internship not found')
         }
-        if(req.user.id === Internship.userID){
+        // if(req.user.id === internship.userID){
             const deletedInternship = await Internship.findByIdAndDelete(req.params.id)
             res.status(200).json(deletedInternship)
-        }
+        // }
     }catch(err){
-        res.status(err.statusCode).send(err.message);
+        console.log('error', err);
+        res.status(err.statusCode).json(err.message);
     }
 })
 

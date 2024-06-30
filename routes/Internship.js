@@ -11,7 +11,7 @@ router.post("/addinternship",verifyCompanyToken,  addInternship)
 
 //update and delete internship doesn't use authorization, need to fix
 router.put("/updateinternship/:id",  updateInternship)
-router.delete("/deleteinternship/:id", deleteInternship)
+router.delete("/deleteinternship/:id", verifyCompanyToken, deleteInternship)
 router.get("/find/:id", findInternship) 
 //student applying for internship in student dashboard
 router.put("/addapplicants/:id",verifyToken, applicants)
