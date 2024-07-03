@@ -86,12 +86,22 @@ const UserSchema = new mongoose.Schema({
     },
 
 
-    resetpasswordtoken:{
+    resetpassToken:{
         type:String,
     },
-    resetpasswordexipre:{
+    resetpassExipre:{
         type:Date
-    }
+    },
+    verifyToken:{
+        type:String
+    },
+    verifyTokenExipre:{
+        type:Date
+    }, 
+    isVerfied: {
+        type: Boolean,
+        default: false,
+    },
 
 
 },
