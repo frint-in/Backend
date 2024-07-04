@@ -95,7 +95,7 @@ const UserSchema = new mongoose.Schema({
     verifyToken:{
         type:String
     },
-    verifyTokenExipre:{
+    verifyTokenExpiry:{
         type:Date
     }, 
     isVerfied: {

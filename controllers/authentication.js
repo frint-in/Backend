@@ -3,7 +3,9 @@ import Users from "../models/Users.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { resolveContent } from "nodemailer/lib/shared/index.js";
-import sendEmail from "../sendEmail.js";
+
+import {sendEmail} from '../helpers/mailer.js'
+
 import crypto from "crypto";
 import { ApiError } from "../utils/ApiError.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
@@ -18,8 +20,22 @@ export const signup = AsyncHandler(async (req, res) => {
     const hash = bcrypt.hashSync(password, salt);
     const newUser = new Users({ ...req.body, password: hash });
 
-    await newUser.save();
-    res.status(200).send("User created");
+    const userEmail = req.body.email
+
+    console.log('userEmail>', userEmail);
+    
+
+    const savedUser = await newUser.save();
+    console.log("savedUser", savedUser );
+
+    const mailresponse = await sendEmail({email:userEmail, emailType: "VERIFY", userId: savedUser._id})
+
+    if (mailresponse) {
+    res.status(200).send("User created and verification mail sent");
+    }else{
+      res.status(200).send("User created");
+    }
+
   } catch (err) {
     console.log(err);
     res.status(409).send(err.message);

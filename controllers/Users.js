@@ -270,3 +270,38 @@ export const find = async(req, res) =>{
             res.status(500).json({ message: 'Server error' });
         }
     };
+
+
+    export const verifyUserEmail = async (req,res) => {
+        try {
+            console.log('req body>>>>>>>>>', req.body);
+            const {token} = req.body
+
+            console.log('token>>>>>', token);
+            
+            const user = await Users.findOne({verifyToken: token, verifyTokenExpiry: {$gt:Date.now()}});
+            
+            if (!user) {
+                res.status(400).json({ message: 'Invalid Token' });
+            }
+
+            console.log('user>>>>', user);
+
+            user.isVerfied = true;
+            user.verifyToken = undefined;
+            user.verifyTokenExpiry = undefined;
+            await user.save();
+
+            res.status(200).json({
+                message: "Email verified successfully",
+                success: true
+            });
+            
+
+
+        } catch (err) {
+            console.log('error in verifyUserEmail>>>>', err);
+            console.error('error in verifyUserEmail>>>>', err);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
