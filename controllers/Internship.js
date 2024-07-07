@@ -30,16 +30,16 @@ const storageGoogle = new Storage({
     private_key: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, "\n"),
     client_email: process.env.GCP_CLIENT_EMAIL,
     client_id: process.env.GCP_CLIENT_ID,
-    auth_uri: process.env.GCP_AUTH_URI,
-    token_uri: process.env.GCP_TOKEN_URI,
-    auth_provider_x509_cert_url: process.env.GCP_AUTH_PROVIDER_X509_CERT_URL,
-    client_x509_cert_url: process.env.GCP_CLIENT_X509_CERT_URL,
+    // auth_uri: process.env.GCP_AUTH_URI,
+    // token_uri: process.env.GCP_TOKEN_URI,
+    // auth_provider_x509_cert_url: process.env.GCP_AUTH_PROVIDER_X509_CERT_URL,
+    // client_x509_cert_url: process.env.GCP_CLIENT_X509_CERT_URL,
     universe_domain: process.env.GCP_UNIVERSE_DOMAIN,
   },
 });
 
 //bucket initialization
-const bucketName = "frint-bucket";
+const bucketName = process.env.GCP_BUCKET_NAME;
 const bucket = storageGoogle.bucket(bucketName);
 
 // export const addInternship = AsyncHandler(async (req, res) => {
@@ -340,12 +340,9 @@ export const updateInternship = AsyncHandler(async (req, res) => {
         // Delete the old file
         const oldFile = bucket.file(oldFileName);
 
-        console.log("6 main 2");
-
-        console.log("old file name from bucket selected>>>>", oldFile);
+        // console.log("old file name from bucket selected>>>>", oldFile);
         await oldFile.delete();
 
-        console.log("6 main 3");
 
         // Upload the new file with the new name
         const blob = bucket.file(newFileName);

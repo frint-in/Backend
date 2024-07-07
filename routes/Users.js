@@ -1,6 +1,6 @@
 import express from "express"
 import { deleteUser, find, finduserbytoken, getUserWithPendingStatus, getUserWithApprovedStatus, getUserWithCompletedStatus, updateUser, Seminar, getseminaruser, verifyUserEmail} from "../controllers/Users.js";
-import { verifyToken } from "../verifyToken.js";
+import {  verifyToken } from "../verifyToken.js";
 
 
 const router = express.Router();
@@ -27,6 +27,9 @@ router.get("/finduserbytoken",verifyToken, finduserbytoken)
 router.get("/getUserWithPendingStatusForInternship",verifyToken, getUserWithPendingStatus)
 router.get("/getUserWithApprovedStatusForInternship",verifyToken, getUserWithApprovedStatus)
 router.get("/getUserWithCompletedStatusForInternship",verifyToken, getUserWithCompletedStatus)
+
+//download
+// router.get("/download/:id",verifyDownloadToken, getDownloadUrl)
 
 //courses
 // router.get("/courses/:id", verifyToken, )
