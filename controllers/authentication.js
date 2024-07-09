@@ -30,10 +30,11 @@ export const signup = AsyncHandler(async (req, res) => {
 
     const mailresponse = await sendEmail({email:userEmail, emailType: "VERIFY", userId: savedUser._id})
 
+    console.log('mailresponse>>>>>>', mailresponse);
     if (mailresponse) {
-    res.status(200).send("User created and verification mail sent");
+    res.status(200).json({ message: "Verification mail sent, please check your inbox"});
     }else{
-      res.status(200).send("User created");
+      res.status(500).json({message: "an error occured during email verfication"});
     }
 
   } catch (err) {
@@ -121,25 +122,69 @@ export const signinGoogle = AsyncHandler(async (req, res) => {
   }
 });
 
+// export const signin = AsyncHandler(async (req, res) => {
+//   try {
+//     const user = await Users.findOne({ email: req.body.email });
+
+
+//     if (!user.isVerfied) {
+//       res.status(401).json({message: 'email verification not done'})
+//     }
+
+//     if (!user) {
+//       throw new ApiError(409, "incorrect email");
+//     }
+//     const isCorrect = await bcrypt.compare(
+//       req.body.password.toString(),
+//       user.password
+//     );
+//     if (!isCorrect) {
+//       throw new ApiError(409, "incorrect password");
+//     } else {
+//       const { password, ...others } = user._doc;
+//       const token = jwt.sign({ id: user._id }, process.env.JWT);
+
+//     console.log('token>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', token);
+
+//       res
+//         .cookie("access_token", token, {
+//           httpOnly: true,
+//         })
+//         .status(200)
+//         .json({ others, token });
+//     }
+//   } catch (err) {
+//     console.log(err);
+//     res.status(err.statusCode).send(err.message);
+//   }
+// });
+
 export const signin = AsyncHandler(async (req, res) => {
   try {
     const user = await Users.findOne({ email: req.body.email });
+
     if (!user) {
       throw new ApiError(409, "incorrect email");
     }
+
+    if (!user.isVerfied) {
+      return res.status(401).json({ message: 'email verification not done' });
+    }
+
     const isCorrect = await bcrypt.compare(
       req.body.password.toString(),
       user.password
     );
+
     if (!isCorrect) {
       throw new ApiError(409, "incorrect password");
     } else {
       const { password, ...others } = user._doc;
       const token = jwt.sign({ id: user._id }, process.env.JWT);
 
-    console.log('token>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', token);
+      console.log('token>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', token);
 
-      res
+      return res
         .cookie("access_token", token, {
           httpOnly: true,
         })
@@ -148,9 +193,10 @@ export const signin = AsyncHandler(async (req, res) => {
     }
   } catch (err) {
     console.log(err);
-    res.status(err.statusCode).send(err.message);
+    res.status(err.statusCode || 500).send(err.message);
   }
 });
+
 
 export const signinadmin = async (req, res) => {
   try {
