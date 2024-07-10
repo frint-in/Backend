@@ -8,6 +8,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import Company from "../models/Company.js";
+import { areRequiredFieldsFilled } from "../helpers/RequiredFields.js";
 
 dotenv.config();
 const upload = multer({
@@ -484,6 +485,20 @@ export const applicants = async (req, res) => {
       return res.status(404).json({ message: "Internship or User not found" });
     }
 
+    
+
+    if (!areRequiredFieldsFilled(user)) {
+      return res.status(400).json({ message: "You have to complete your profile before applying." });
+    }
+
+    // Check for duplicate applications
+    // some():  check if at least one element in an array satisfies a given condition
+    const alreadyApplied = user.applications.some(application => application.internship.toString() === req.params.id);
+
+    if (alreadyApplied) {
+      return res.status(409).json({ message: "You have already applied to this internship." });
+    }
+
     //Doubt: what is the use of updating subuser after every applicant that applies to an internship?
     const updatedInternship = await Internship.findByIdAndUpdate(
       req.params.id,
@@ -540,7 +555,7 @@ export const updatestudenttoapproved = async (req, res) => {
 
     res.status(200).json(updatedUser);
   } catch (err) {
-    console.error(err.message);
+    console.error("error in update approve", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -659,6 +674,8 @@ export const getUsersWithInternship = async (req, res) => {
     // const user = req.user
 
     const users = await Users.find({
+      //internship ka id is sent from the frontend
+      //filter and find all the users to this particular internship
       "applications.internship": req.params.id,
     });
 
