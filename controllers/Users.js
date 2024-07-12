@@ -413,3 +413,41 @@ export const verifyUserEmail = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+export const verifyUserOtp = async (req, res) => {
+  try {
+    console.log("req body>>>>>>>>>", req.body);
+    const { otp } = req.body;
+
+    console.log("token from user>>>>>", otp);
+
+    const user = await Users.findOne({
+      verifyOtp: otp,
+    });
+
+    if (!user) {
+     return res.status(401).json({ message: "incorrect OTP. Try again" });
+    }
+
+    if (user.verifyOtpExpiry <= Date.now()) {
+      return res.status(401).json({ message: "OTP has expired. Try again" });
+    }
+
+    console.log("user>>>>", user);
+
+    user.isVerfied = true;
+    user.verifyOtp = undefined;
+    user.verifyOtpExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({
+      message: "Account verification successfully",
+      success: true,
+    });
+  } catch (err) {
+    console.log("error in verifyUserOTP>>>>", err);
+    console.error("error in verifyUserOTP>>>>", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

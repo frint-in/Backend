@@ -1,5 +1,5 @@
 import express from "express"
-import { deleteUser, find, finduserbytoken, getUserWithPendingStatus, getUserWithApprovedStatus, getUserWithCompletedStatus, updateUser, Seminar, getseminaruser, verifyUserEmail} from "../controllers/Users.js";
+import { deleteUser, find, finduserbytoken, getUserWithPendingStatus, getUserWithApprovedStatus, getUserWithCompletedStatus, updateUser, Seminar, getseminaruser, verifyUserEmail, verifyUserOtp} from "../controllers/Users.js";
 import {  verifyToken } from "../verifyToken.js";
 
 
@@ -37,6 +37,8 @@ router.get("/getUserWithCompletedStatusForInternship",verifyToken, getUserWithCo
 //verifyEmail
 router.post("/verifyemail", verifyUserEmail)
 
+//verifyOTP
+router.post("/verifyotp", verifyUserOtp)
 
 
 

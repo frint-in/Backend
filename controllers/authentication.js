@@ -10,14 +10,27 @@ import crypto from "crypto";
 import { ApiError } from "../utils/ApiError.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { generateRandomString } from "../utils/Oauth.js";
+import { sendOtp } from "../helpers/sendSms.js";
 
 //student
 
 export const signup = AsyncHandler(async (req, res) => {
   try {
+
+    const {phno} = req.body
+
+    const existingUser = await Users.findOne({phno})
+
+    if (existingUser) {
+      console.log('existingUser', existingUser);
+      return res.status(409).json({message: 'user already exists'})
+    }
+
+
     const password = req.body.password.toString();
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
+    //also adds phno
     const newUser = new Users({ ...req.body, password: hash });
 
     const userEmail = req.body.email
@@ -28,6 +41,17 @@ export const signup = AsyncHandler(async (req, res) => {
     const savedUser = await newUser.save();
     console.log("savedUser", savedUser );
 
+    //send Otp
+    // const otpResponse = await sendOtp({phno, name: savedUser.uname })
+    // if (otpResponse) {
+    // res.status(200).json({ message: "OTP sent to your mobile number, please check your inbox"});
+    // }else{
+    //   res.status(500).json({message: "an error occured during otp verfication"});
+    // }
+    
+
+
+    //send token via mail
     const mailresponse = await sendEmail({email:userEmail, emailType: "VERIFY", userId: savedUser._id})
 
     console.log('mailresponse>>>>>>', mailresponse);
@@ -168,7 +192,7 @@ export const signin = AsyncHandler(async (req, res) => {
     }
 
     if (!user.isVerfied) {
-      return res.status(401).json({ message: 'email verification not done' });
+      return res.status(401).json({ message: 'please verify your account' });
     }
 
     const isCorrect = await bcrypt.compare(
@@ -277,7 +301,7 @@ export const resetPassword = async (req, res, next) => {
   try {
     if (!User) {
       console.log("User not found");
-    } else {
+    } else { 
       const resetPasswordUrl = `${req.protocol}://${req.get(
         "host"
       )}/api/auth/v1/password/reset/${resetToken}`;
