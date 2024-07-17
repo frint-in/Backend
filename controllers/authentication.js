@@ -10,7 +10,15 @@ import crypto from "crypto";
 import { ApiError } from "../utils/ApiError.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { generateRandomString } from "../utils/Oauth.js";
-import { sendOtp } from "../helpers/sendSms.js";
+import { sendOtpTwilio } from "../helpers/sendSms.js";
+
+import { google} from 'googleapis'
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.DOMAIN
+)
 
 //student
 
@@ -116,6 +124,10 @@ export const signupGoogle = AsyncHandler(async (req, res) => {
 //     }
 // })
 
+
+//(1)
+const ALFRED_REFRESH_TOKEN = '1//0gGa60JoBL9MLCgYIARAAGBASNwF-L9IrF0SCEKFVFlfxjL8acfLYxMQsdASzfekKhrI7e0QOpoqgu4VmaiBYMhqWMAf24Hki0d8'
+
 export const signinGoogle = AsyncHandler(async (req, res) => {
   try {
 
@@ -145,6 +157,47 @@ export const signinGoogle = AsyncHandler(async (req, res) => {
     res.status(err.statusCode).send(err.message);
   }
 });
+
+
+export const getOauthToken = async (req, res) => {
+  try {
+
+    const {code} = req.body;
+
+
+    //we provide the code that has been generated in the frontend to the oauth2Client and it gives back the access and refresh token particular to that user.
+    const response = await oauth2Client.getToken(code)
+
+
+    //we need to save the refresh token against that specific user, its our responsibility. The same refresh token would be later used to autenticate and generate events in their calender
+
+    //everytime that function is used, new refresh token is generated. Make sure to update it in the database
+    console.log('response after getting the code from the frontend and providing it to the oauth2client in the backend>>>', response);
+
+    //save it in the database
+    const refreshToken = response.tokens.refresh_token;
+
+    //for demonstration purpose, I am just creating a globarl variable for refresh token for my user alfredbasi03@gmail.com (1)
+
+    res.status(200).json(response)  
+
+    console.log('oauth in backend>>', req.body);
+    
+  } catch (err) {
+    console.log('error in oauth>>>>>>>>', err);
+    res.status(500).json({message: 'error while google authentication '})
+  }
+}
+
+
+export const createCalenderEvent = async (req, res) => {
+  try {
+    
+  } catch (err) {
+    console.log('error in oauth>>>>>>>>', err);
+    res.status(500).json({message: 'error while creating an event '})
+  }
+}
 
 // export const signin = AsyncHandler(async (req, res) => {
 //   try {

@@ -19,10 +19,10 @@ const InternshipSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    website: {
-        type: String,
-        required: false
-    },
+    // website: {
+    //     type: String,
+    //     required: false
+    // },
     catagories: {
         type: String,
         required: false

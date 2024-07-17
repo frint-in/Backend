@@ -108,6 +108,9 @@ const UserSchema = new mongoose.Schema({
     verifyOtpExpiry:{
         type:Date
     }, 
+    refreshToken: {
+        type: String
+    }
 
 
 },
