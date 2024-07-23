@@ -41,6 +41,9 @@ const CompanySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    refreshToken: {
+        type: String
+    },
     internships: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Internship"

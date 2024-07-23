@@ -7,6 +7,15 @@ import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
 import { Storage } from "@google-cloud/storage";
 
+
+import { google} from 'googleapis'
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.DOMAIN
+)
+
 dotenv.config();
 
 const upload = multer({
@@ -449,5 +458,71 @@ export const verifyUserOtp = async (req, res) => {
     console.log("error in verifyUserOTP>>>>", err);
     console.error("error in verifyUserOTP>>>>", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+export const createCalendarEvent = async (req, res) => {
+  try {
+
+    // console.log('req.body', req.body);
+    const { summary, description, startDateTime, endDateTime, location, id } = req.body;
+
+
+    if (!id) {
+     return  res.status(400).json({message: 'id not sent from the client'})
+    }
+
+    const user = await Users.findById(id)
+
+    console.log('user>>>>>>>', user);
+
+    if (!user) {
+     return  res.status(400).json({message: 'user not found'})
+    }
+    // Check if refresh token exists
+    if (!user.refreshToken) {
+      return res.status(400).json({ message: 'Refresh token not found. Login using google' });
+    }
+
+
+
+    oauth2Client.setCredentials({ refresh_token: user.refreshToken });
+
+    // Verify if the refresh token is valid
+    try {
+      const token = await oauth2Client.getAccessToken();
+
+      console.log('token while checking if RT is valid>>', token);
+    } catch (tokenError) {
+      console.error('Invalid or expired refresh token', tokenError);
+      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+
+    // Use the Calendar API
+    const calendar = google.calendar('v3');
+
+    const response =  calendar.events.insert({
+      auth: oauth2Client,
+      calendarId: 'primary',
+      requestBody: {
+        summary,
+        description,
+        location,
+        colorId: '7',
+        start: {
+          dateTime: new Date(startDateTime),
+        },
+        end: {
+          dateTime: new Date(endDateTime),
+        },
+      },
+    });
+
+    res.status(201).json({ message: 'Event created successfully', response });
+  } catch (err) {
+    console.error('Error in OAuth', err);
+    res.status(500).json({ message: 'Error while creating an event' });
   }
 };

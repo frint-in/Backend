@@ -31,7 +31,7 @@ const UserSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        // required: true
     },
     avatar: {
         type: String,
@@ -84,6 +84,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: "false"
     },
+    isGoogleUser: {
+        type: Boolean,
+        default: false
+      },
 
 
     resetpassToken:{

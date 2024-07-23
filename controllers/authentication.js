@@ -13,6 +13,7 @@ import { generateRandomString } from "../utils/Oauth.js";
 import { sendOtpTwilio } from "../helpers/sendSms.js";
 
 import { google} from 'googleapis'
+import handleGoogleAuth from "../helpers/googleAuth.js";
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -75,30 +76,56 @@ export const signup = AsyncHandler(async (req, res) => {
   }
 });
 
-export const signupGoogle = AsyncHandler(async (req, res) => {
-  try {
-    const password_lol = generateRandomString(8);
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(password_lol, salt);
-    const newUser = new Users({ ...req.body, password: hash });
-    await newUser.save();
-    res.status(200).send("User created");
-    // const user = await Users.findOne({email:req.body.email})
-    // const {password, ...others} = user._doc
-    // console.log(user)
-    // console.log(user._id)
-    // const token = jwt.sign({id:user._id}, process.env.JWT)
-    // console.log(first)
-    // res.cookie("access_token", token, {
-    //     httpOnly:true
-    // }).status(200).json({others, token})
-  } catch (err) {
-    console.log(err);
-    res.status(409).send(err.message);
-  }
-});
+// export const signupGoogle = async (req, res) => {
+//   try {
+//     const { code } = req.body;
+
+//     const { user, token, refreshToken } = await handleGoogleAuth(code);
+
+//     user.refreshToken = refreshToken;
+//     await user.save();
+
+//     res.cookie('access_token', token, { httpOnly: true });
+//     res.status(200).json({ message: 'Sign up successful', user });
+//   } catch (err) {
+//     console.error('Error during Google signup:', err);
+//     res.status(500).json({ message: 'Error while handling Google authentication' });
+//   }
+// };
 
 //signin
+export const signinGoogle = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+
+     // Determine the redirect_uri based on the request origin
+     const origin = req.headers.origin;
+     let redirectUri;
+     if (origin === 'http://localhost:5173') {
+       redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5173;
+     } else if (origin === 'http://localhost:5174') {
+       redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5174;
+     } else {
+       redirectUri = process.env.GOOGLE_REDIRECT_URI_PROD; // Default to production
+     }
+
+    const { user, token } = await handleGoogleAuth(code, redirectUri);
+
+
+
+
+
+    res.cookie('access_token', token, { httpOnly: true });
+    res.status(200).json({ message: 'Sign in successful', user, token });
+  } catch (err) {
+    console.error('Error during Google sign-in:', err);
+    res.status(500).json({ message: 'Error while handling Google authentication' });
+  }
+};
+
+
+
 
 // export const signinGoogle = AsyncHandler(async(req, res) =>{
 //     try{
@@ -126,115 +153,97 @@ export const signupGoogle = AsyncHandler(async (req, res) => {
 
 
 //(1)
-const ALFRED_REFRESH_TOKEN = '1//0gGa60JoBL9MLCgYIARAAGBASNwF-L9IrF0SCEKFVFlfxjL8acfLYxMQsdASzfekKhrI7e0QOpoqgu4VmaiBYMhqWMAf24Hki0d8'
-
-export const signinGoogle = AsyncHandler(async (req, res) => {
-  try {
-
-    console.log('hi');
-    const user = await Users.findOne({ email: req.body.email });
-    if (!user) {
-      throw new ApiError(409, "incorrect email");
-    }
-    // const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
-    // if(!isCorrect){
-    //     throw new ApiError(409, 'incorrect password')
-    // }
-
-    const { password, ...others } = user._doc;
-    const token = jwt.sign({ id: user._id }, process.env.JWT);
-    console.log('token>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', token);
-    res
-      .cookie("access_token", token, {
-        httpOnly: true,
-      })
-      .status(200)
-      .json({ others, token });
 
 
-  } catch (err) {
-    console.log(err);
-    res.status(err.statusCode).send(err.message);
-  }
-});
-
-
-export const getOauthToken = async (req, res) => {
-  try {
-
-    const {code} = req.body;
-
-
-    //we provide the code that has been generated in the frontend to the oauth2Client and it gives back the access and refresh token particular to that user.
-    const response = await oauth2Client.getToken(code)
-
-
-    //we need to save the refresh token against that specific user, its our responsibility. The same refresh token would be later used to autenticate and generate events in their calender
-
-    //everytime that function is used, new refresh token is generated. Make sure to update it in the database
-    console.log('response after getting the code from the frontend and providing it to the oauth2client in the backend>>>', response);
-
-    //save it in the database
-    const refreshToken = response.tokens.refresh_token;
-
-    //for demonstration purpose, I am just creating a globarl variable for refresh token for my user alfredbasi03@gmail.com (1)
-
-    res.status(200).json(response)  
-
-    console.log('oauth in backend>>', req.body);
-    
-  } catch (err) {
-    console.log('error in oauth>>>>>>>>', err);
-    res.status(500).json({message: 'error while google authentication '})
-  }
-}
-
-
-export const createCalenderEvent = async (req, res) => {
-  try {
-    
-  } catch (err) {
-    console.log('error in oauth>>>>>>>>', err);
-    res.status(500).json({message: 'error while creating an event '})
-  }
-}
-
-// export const signin = AsyncHandler(async (req, res) => {
+// export const signinGoogle = AsyncHandler(async (req, res) => {
 //   try {
+
+//     console.log('hi');
 //     const user = await Users.findOne({ email: req.body.email });
-
-
-//     if (!user.isVerfied) {
-//       res.status(401).json({message: 'email verification not done'})
-//     }
-
 //     if (!user) {
 //       throw new ApiError(409, "incorrect email");
 //     }
-//     const isCorrect = await bcrypt.compare(
-//       req.body.password.toString(),
-//       user.password
-//     );
-//     if (!isCorrect) {
-//       throw new ApiError(409, "incorrect password");
-//     } else {
-//       const { password, ...others } = user._doc;
-//       const token = jwt.sign({ id: user._id }, process.env.JWT);
+//     // const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
+//     // if(!isCorrect){
+//     //     throw new ApiError(409, 'incorrect password')
+//     // }
 
+//     const { password, ...others } = user._doc;
+//     const token = jwt.sign({ id: user._id }, process.env.JWT);
 //     console.log('token>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', token);
+//     res
+//       .cookie("access_token", token, {
+//         httpOnly: true,
+//       })
+//       .status(200)
+//       .json({ others, token });
 
-//       res
-//         .cookie("access_token", token, {
-//           httpOnly: true,
-//         })
-//         .status(200)
-//         .json({ others, token });
-//     }
+
 //   } catch (err) {
 //     console.log(err);
 //     res.status(err.statusCode).send(err.message);
 //   }
 // });
+
+
+export const getOauthToken = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const { tokens } = await oauth2Client.getToken(code);
+    const { access_token, refresh_token, id_token } = tokens;
+
+    if (!refresh_token) {
+      return res.status(400).json({ message: 'Refresh token not provided' });
+    }
+
+    // Verify ID Token to get user information
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    console.log('token is verified');
+    const payload = ticket.getPayload();
+
+    console.log('payload of the user after verifying the id we receive from oauth.getToken()>>>', payload);
+
+
+
+
+
+    // Check if user exists
+    let user = await Users.findOne({ email: payload.email });
+
+    if (!user) {
+      // If not, create a new user
+      user = new Users({
+        email: payload.email,
+        avatar: payload.picture,
+        uname: payload.name,
+        refreshToken: refresh_token,
+        // Set additional user fields as needed
+      });
+      await user.save();
+
+      console.log('user saved successfull from google');
+    } else {
+      // Update user's refresh token
+      user.refreshToken = refresh_token;
+      await user.save();
+    }
+
+    // Issue JWT or session token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+
+    res.cookie('access_token', token, { httpOnly: true });
+    res.status(200).json({ message: 'Sign in successful', user });
+  } catch (err) {
+    console.error('Error in OAuth process:', err);
+    res.status(500).json({ message: 'Error while handling Google authentication' });
+  }
+};
+
+
 
 export const signin = AsyncHandler(async (req, res) => {
   try {

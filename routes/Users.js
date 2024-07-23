@@ -15,6 +15,7 @@ import {
 import { verifyToken } from "../verifyToken.js";
 import fast2sms from "fast-two-sms";
 import axios from 'axios'
+import { createCalendarEvent } from "../controllers/Users.js";
 
 const router = express.Router();
 
@@ -58,6 +59,9 @@ router.post("/verifyemail", verifyUserEmail);
 
 //verifyOTP
 router.post("/verifyotp", verifyUserOtp);
+
+//create-meeting-calender
+router.post('/create-meeting', createCalendarEvent )
 
 // router.post("/test", async (req, res) => {
 //   try {

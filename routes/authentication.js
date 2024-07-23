@@ -1,13 +1,13 @@
 import express from "express"
-import { createCalenderEvent, getOauthToken, logout,  resetPass, resetPassword, signin, signinGoogle, signinadmin, signup, signupGoogle} from "../controllers/authentication.js";
+import { getOauthToken, logout,  resetPass, resetPassword, signin, signinGoogle, signinadmin, signup} from "../controllers/authentication.js";
 
 const router = express.Router();
 
 router.post("/signup", signup)
-router.post("/signupGoogle", signupGoogle)
+// router.post("/signupGoogle", signupGoogle)
 
 router.post("/signin", signin)
-router.post("/signinGoogle", signinGoogle)
+router.post("/signingoogle", signinGoogle)
 router.post("/signinadmin", signinadmin)
 
 router.post('/logout', logout)
@@ -15,7 +15,7 @@ router.post('/logout', logout)
 router.post("/google-create-token", getOauthToken  )
 
 
-router.post("/create-event", createCalenderEvent  )
+// router.post("/create-event", createCalendarEvent  )
 
 // router.post('/v1/password/reset', resetPassword)
 // router.get('/v1/password/reset/:token', resetPass).put(resetPass)
