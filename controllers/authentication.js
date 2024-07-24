@@ -3,6 +3,7 @@ import Users from "../models/Users.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { resolveContent } from "nodemailer/lib/shared/index.js";
+import dotenv from 'dotenv'
 
 import {sendEmail} from '../helpers/mailer.js'
 
@@ -14,6 +15,9 @@ import { sendOtpTwilio } from "../helpers/sendSms.js";
 
 import { google} from 'googleapis'
 import handleGoogleAuth from "../helpers/googleAuth.js";
+
+
+dotenv.config()
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -98,13 +102,20 @@ export const signinGoogle = async (req, res) => {
   try {
     const { code } = req.body;
 
+  
+
 
      // Determine the redirect_uri based on the request origin
      const origin = req.headers.origin;
+
+
+
      let redirectUri;
      if (origin === 'http://localhost:5173') {
+      console.log('process.env.GOOGLE_REDIRECT_URI_LOCAL_5173', process.env.GOOGLE_REDIRECT_URI_LOCAL_5173);
        redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5173;
      } else if (origin === 'http://localhost:5174') {
+      console.log('process.env.GOOGLE_REDIRECT_URI_LOCAL_5174>>>>>>', process.env.GOOGLE_REDIRECT_URI_LOCAL_5174);
        redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5174;
      } else {
        redirectUri = process.env.GOOGLE_REDIRECT_URI_PROD; // Default to production
@@ -233,7 +244,7 @@ export const getOauthToken = async (req, res) => {
     }
 
     // Issue JWT or session token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    const token = jwt.sign({ id: user._id }, process.env.JWT);
 
     res.cookie('access_token', token, { httpOnly: true });
     res.status(200).json({ message: 'Sign in successful', user });

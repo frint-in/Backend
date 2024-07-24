@@ -12,7 +12,7 @@ router.post("/signinadmin", signinadmin)
 
 router.post('/logout', logout)
 //google
-router.post("/google-create-token", getOauthToken  )
+// router.post("/google-create-token", getOauthToken  )
 
 
 // router.post("/create-event", createCalendarEvent  )
