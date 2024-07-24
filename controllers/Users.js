@@ -88,10 +88,10 @@ export const updateUser = async (req, res) => {
       ])(req, res, async function (err) {
         if (err instanceof multer.MulterError) {
           console.error(err);
-          return res.status(409).json({ error: "Failed to add image" });
+          return res.status(409).json({ message: "Failed to add image" });
         } else if (err) {
           console.error(err);
-          return res.status(409).json({ error: "internal server error" });
+          return res.status(409).json({ message: "internal server error" });
         }
   
         console.log("req body in form upload>>>>>>", req.body);
@@ -99,7 +99,16 @@ export const updateUser = async (req, res) => {
   
         const profileImg = req.files["profileImg"];
         const resume = req.files["resume"];
-        const updates = { ...req.body };
+        const updates = {};
+
+          // Iterate over fields from req.body and add to updates if not empty
+      for (const key in req.body) {
+        if (req.body[key] !== "") {
+          updates[key] = req.body[key];
+        }
+      }
+
+
   
         //-------------------------------avatar-----------------------------
         if (profileImg) {
@@ -123,7 +132,7 @@ export const updateUser = async (req, res) => {
   
           blobStream.on("error", (err) => {
             console.error("Blob stream error", err);
-            return res.status(500).send(`Error uploading file: ${err}`);
+            return res.status(500).json({message :`Error uploading file. Please try again`});
           });
   
           blobStream.on("finish", async () => {
@@ -158,7 +167,7 @@ export const updateUser = async (req, res) => {
   
           resumeBlobStream.on("error", (err) => {
             console.error("Resume blob stream error", err);
-            return res.status(500).send(`Error uploading file: ${err}`);
+            return res.status(500).json({message :`Error uploading file. Please try again`});
           });
   
           resumeBlobStream.on("finish", async () => {
@@ -181,10 +190,12 @@ export const updateUser = async (req, res) => {
             ).lean();
   
             delete updatedUser.password;
-            res.status(200).json(updatedUser);
+            delete updatedUser.refreshToken;
+
+            res.status(200).json({message: 'Profile Edited Successfully', user: updatedUser });
           } catch (updateErr) {
             console.error("Database update error", updateErr);
-            res.status(500).json({ error: updateErr.message });
+            res.status(500).json({ message: "server timed out. Please try later" });
           }
         };
   
