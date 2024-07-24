@@ -1,6 +1,6 @@
 export const areRequiredFieldsFilled = (user) => {
     // List of required fields
-    const requiredFields = ['uname', 'email', 'password', 'avatar', 'phno', 'specialisation', 'education', 'dob', 'languages', 'skills', 'resume'];
+    const requiredFields = ['uname', 'email', 'avatar', 'phno', 'specialisation', 'education', 'dob', 'languages', 'skills', 'resume'];
     
     // Loop through each required field
     for (let field of requiredFields) {

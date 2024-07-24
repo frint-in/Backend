@@ -353,9 +353,10 @@ export const logout = async (req, res) => {
         expires: new Date(0),
       })
       .status(200)
-      .json("Logged Out");
+      .json({message: "Logged Out Successfully"});
   } catch (error) {
     console.log(error);
+    res.status(500).json({ message: "Error while logging out. Please try again" });
   }
 };
 
