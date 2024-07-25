@@ -137,122 +137,58 @@ export const signinGoogle = async (req, res) => {
 
 
 
-
-// export const signinGoogle = AsyncHandler(async(req, res) =>{
-//     try{
-//         const user = await Users.findOne({email:req.body.email})
-//         // const token = req.body.access_token
-//         if(!user){
-//             throw new ApiError(409, 'incorrect email')
-//         }
-//         // const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
-//         // if(!isCorrect){
-//         //     throw new ApiError(409, 'incorrect password')
-//         // }
-//         // else{
-//         const {password, ...others} = user._doc
-//         const token = jwt.sign({id:user._id}, process.env.JWT)
-//         res.cookie("access_token", token, {
-//             httpOnly:truemaxAge
-//         }).status(200).json({others, token})
-//         // }
-//     }catch (err) {
-//         console.log(err)
-//         res.status(err.statusCode).send(err.message);
-//     }
-// })
-
-
-//(1)
-
-
-// export const signinGoogle = AsyncHandler(async (req, res) => {
-//   try {
-
-//     console.log('hi');
-//     const user = await Users.findOne({ email: req.body.email });
-//     if (!user) {
-//       throw new ApiError(409, "incorrect email");
-//     }
-//     // const isCorrect =await bcrypt.compare(req.body.password.toString(), user.password)
-//     // if(!isCorrect){
-//     //     throw new ApiError(409, 'incorrect password')
-//     // }
-
-//     const { password, ...others } = user._doc;
-//     const token = jwt.sign({ id: user._id }, process.env.JWT);
-//     console.log('token>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', token);
-//     res
-//       .cookie("access_token", token, {
-//         httpOnly: true,
-//       })
-//       .status(200)
-//       .json({ others, token });
-
-
-//   } catch (err) {
-//     console.log(err);
-//     res.status(err.statusCode).send(err.message);
-//   }
-// });
-
-
-export const getOauthToken = async (req, res) => {
+export const linkGoogleAccount = async (req, res) => {
   try {
-    const { code } = req.body;
-    const { tokens } = await oauth2Client.getToken(code);
-    const { access_token, refresh_token, id_token } = tokens;
+    const { code, userId } = req.body;
 
-    if (!refresh_token) {
-      return res.status(400).json({ message: 'Refresh token not provided' });
+    // Determine the redirect_uri based on the request origin
+    const origin = req.headers.origin;
+
+    let redirectUri;
+    if (origin === 'http://localhost:5173') {
+      redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5173;
+    } else if (origin === 'http://localhost:5174') {
+      redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5174;
+    } else {
+      redirectUri = process.env.GOOGLE_REDIRECT_URI_PROD; // Default to production
     }
 
-    // Verify ID Token to get user information
+    const { tokens } = await oauth2Client.getToken({ code, redirect_uri: redirectUri });
+    const { id_token, refresh_token } = tokens;
+
+    // Verify the ID token and get user info
     const ticket = await oauth2Client.verifyIdToken({
       idToken: id_token,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
-
-    console.log('token is verified');
     const payload = ticket.getPayload();
+    const email = payload.email;
 
-    console.log('payload of the user after verifying the id we receive from oauth.getToken()>>>', payload);
-
-
-
-
-
-    // Check if user exists
-    let user = await Users.findOne({ email: payload.email });
+    // Find the existing user by their ID
+    let user = await Users.findById(userId);
 
     if (!user) {
-      // If not, create a new user
-      user = new Users({
-        email: payload.email,
-        avatar: payload.picture,
-        uname: payload.name,
-        refreshToken: refresh_token,
-        // Set additional user fields as needed
-      });
-      await user.save();
-
-      console.log('user saved successfull from google');
-    } else {
-      // Update user's refresh token
-      user.refreshToken = refresh_token;
-      await user.save();
+      return res.status(404).json({ message: 'User not found' });
     }
+    //DOUBT:
+    // Update the user with Google account details
+    user.email = email; // Update email if needed
+    if (!user.avatar) {
+      user.avatar = payload.picture;
+    }
+    // user.uname = payload.name;
+    user.isGoogleUser = true; // Flag to indicate Google sign-up
+    user.refreshToken = refresh_token;
 
-    // Issue JWT or session token
-    const token = jwt.sign({ id: user._id }, process.env.JWT);
+    await user.save();
 
-    res.cookie('access_token', token, { httpOnly: true });
-    res.status(200).json({ message: 'Sign in successful', user });
+    res.status(200).json({ message: 'Google account linked successfully', user });
   } catch (err) {
-    console.error('Error in OAuth process:', err);
-    res.status(500).json({ message: 'Error while handling Google authentication' });
+    console.error('Error during Google account linking:', err);
+    res.status(500).json({ message: 'Error while handling Google account linking' });
   }
 };
+
 
 
 
