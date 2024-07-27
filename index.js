@@ -10,6 +10,9 @@ import cors from 'cors'
 import InternshipRouter from './routes/Internship.js'
 import userRouter from "./routes/Users.js"
 
+import phonepeRouter from "./routes/Phonepe.js"
+
+
 
 
 
@@ -40,6 +43,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/company', CompanyRouter)
 app.use('/api/internship', InternshipRouter)
 app.use('/api/user', userRouter)
+app.use('/api/phonepe', phonepeRouter)
 
 
 

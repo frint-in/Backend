@@ -9,6 +9,10 @@ import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import Company from "../models/Company.js";
 import { areRequiredFieldsFilled } from "../helpers/RequiredFields.js";
+import axios from 'axios'
+
+
+
 
 dotenv.config();
 const upload = multer({
@@ -499,35 +503,46 @@ export const applicants = async (req, res) => {
       return res.status(409).json({ message: "You have already applied to this internship." });
     }
 
+
+    //updating info only after the payment is successful
     //Doubt: what is the use of updating subuser after every applicant that applies to an internship?
-    const updatedInternship = await Internship.findByIdAndUpdate(
-      req.params.id,
-      {
-        $set: { subuser: req.user.id },
-      },
-      {
-        new: true,
-      }
-    );
+    //   await Internship.findByIdAndUpdate(
+    //   req.params.id,
+    //   {
+    //     $set: { subuser: req.user.id },
+    //   },
+    //   {
+    //     new: true,
+    //   }
+    // );
 
-    // const createdApplicationAt = new Date();
+    // const application = {
+    //   internship: req.params.id,
+    //   status: "pending",
+    // };
 
-    const application = {
-      internship: req.params.id,
-      status: "pending",
-    };
+    // const updatedUser = await Users.findByIdAndUpdate(
+    //   req.user.id,
+    //   {
+    //     $push: { applications: application },
+    //   },
+    //   {
+    //     new: true,
+    //   }
+    // );
 
-    const updatedUser = await Users.findByIdAndUpdate(
-      req.user.id,
-      {
-        $push: { applications: application },
-      },
-      {
-        new: true,
-      }
-    );
+    const paymentResponse = await axios.post(`${process.env.API_URL}/api/phonepe/payment`, {
+      name: user.uname,
+      number: user.phno,
+      amount: internship.price,
+      userId: req.user.id,
+      internshipId: req.params.id,
+    });
 
-    res.status(200).json(updatedUser);
+    //sending the redirectUrl to the frontend 
+    return res.status(200).json({ redirectUrl: paymentResponse.data });
+
+    // res.status(200).json(updatedUser);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
