@@ -194,10 +194,13 @@ export const linkGoogleAccount = async (req, res) => {
 
 export const signin = AsyncHandler(async (req, res) => {
   try {
-    const user = await Users.findOne({ email: req.body.email });
+
+    const email = req.body.email.trim();
+
+    const user = await Users.findOne({ email });
 
     if (!user) {
-      throw new ApiError(409, "incorrect email");
+      return res.status(400).json({ message: 'user not found' });
     }
 
     if (!user.isVerfied) {
