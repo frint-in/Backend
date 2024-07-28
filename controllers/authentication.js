@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import Users from "../models/Users.js";
+import Company from '../models/Company.js'
+
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { resolveContent } from "nodemailer/lib/shared/index.js";
@@ -164,15 +166,17 @@ export const linkGoogleAccount = async (req, res) => {
     const payload = ticket.getPayload();
     const email = payload.email;
 
+
+
     // Find the existing user by their ID
-    let user = await Users.findById(userId);
+    let user = await Users.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     //DOUBT:
     // Update the user with Google account details
-    user.email = email; // Update email if needed
+    // user.email = email; // Update email if needed
     if (!user.avatar) {
       user.avatar = payload.picture;
     }
@@ -188,6 +192,73 @@ export const linkGoogleAccount = async (req, res) => {
     res.status(500).json({ message: 'Error while handling Google account linking' });
   }
 };
+
+
+
+export const linkGoogleAccountCompany = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    // Determine the redirect_uri based on the request origin
+    const origin = req.headers.origin;
+
+    let redirectUri;
+    if (origin === 'http://localhost:5173') {
+      redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5173;
+    } else if (origin === 'http://localhost:5174') {
+      redirectUri = process.env.GOOGLE_REDIRECT_URI_LOCAL_5174;
+    } else {
+      redirectUri = process.env.GOOGLE_REDIRECT_URI_PROD_COMPANY; // Default to production
+    }
+
+    const { tokens } = await oauth2Client.getToken({ code, redirect_uri: redirectUri });
+    const { id_token, refresh_token } = tokens;
+
+    // Verify the ID token and get user info
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const email = payload.email;
+
+    //Find the existing company by their ID
+    let company = await Company.findById(req.company.id)
+
+    if (!company) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    company.isGoogleUser = true; // Flag to indicate Google sign-up
+    company.refreshToken = refresh_token;
+
+    await company.save();
+
+    // // Find the existing user by their ID
+    // let user = await Users.findById(userId);
+
+    // if (!user) {
+    //   return res.status(404).json({ message: 'User not found' });
+    // }
+    // //DOUBT:
+    // // Update the user with Google account details
+    // user.email = email; // Update email if needed
+    // if (!user.avatar) {
+    //   user.avatar = payload.picture;
+    // }
+    // // user.uname = payload.name;
+    // user.isGoogleUser = true; // Flag to indicate Google sign-up
+    // user.refreshToken = refresh_token;
+
+    // await user.save();
+
+    res.status(200).json({ message: 'Google account of company linked successfully', company });
+  } catch (err) {
+    console.error('Error during Google account linking:', err);
+    res.status(500).json({ message: 'Error while handling Google account linking' });
+  }
+};
+
 
 
 
@@ -266,7 +337,7 @@ export const signinadmin = async (req, res) => {
 
 //teacher
 
-export const Company = async (req, res, next) => {
+export const CompanyAuth = async (req, res, next) => {
   try {
     const user = await Users.findById({ _id: req.user.id });
 

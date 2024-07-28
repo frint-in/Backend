@@ -75,7 +75,6 @@ const bucket = storageGoogle.bucket(bucketName);
 // };
 
 export const updateUser = async (req, res) => {
-    console.log(req.user.id);
     const user = await Users.findById(req.user.id);
     if (!user) {
       console.log("user not found");
@@ -191,6 +190,8 @@ export const updateUser = async (req, res) => {
   
             delete updatedUser.password;
             delete updatedUser.refreshToken;
+
+            console.log('updatedUser');
 
             res.status(200).json({message: 'Profile Edited Successfully', user: updatedUser });
           } catch (updateErr) {

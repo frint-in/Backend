@@ -41,6 +41,10 @@ const CompanySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    isGoogleUser: {
+        type: Boolean,
+        default: false
+    },
     refreshToken: {
         type: String
     },

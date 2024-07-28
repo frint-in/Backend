@@ -27,6 +27,9 @@ export const verifyToken = async (req, res, next) => {
    else{
        req.user = user
 
+       console.log('user.id in verifyToken>>>>>>>', user.id);
+      //  console.log('user._id in verifyToken>>>>>>>', user._id);
+
        const dbUser = await Users.findById(user.id);
        if (!dbUser) {
          return res.status(404).json({ error: 'User not found' });
@@ -82,12 +85,12 @@ export const verifyToken = async (req, res, next) => {
 export const verifyCompanyToken = (req, res, next) => {
     const token = req.cookies.access_token_company
     if(!token){
-        return res.status(401).json({ error: 'Error in access_token' });
+        return res.status(401).json({ message: 'Error in access_token' });
     }
  
     jwt.verify(token, process.env.JWT, (err, company) => {
      if (err){
-        return res.status(401).json({ error: 'Error in verifying token' });
+        return res.status(401).json({ message: 'Error in verifying token' });
      }
      else{
          req.company = company
