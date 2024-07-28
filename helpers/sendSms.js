@@ -4,9 +4,7 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioNumber = process.env.TWILIO_NUMBER;
 
-console.log('accountSid', accountSid);
-console.log('authToken', authToken);
-console.log('twilioNumber', twilioNumber);
+
 const client = twilio(accountSid, authToken);
 
 export const sendOtpTwilio = async ({ phno, name }) => {

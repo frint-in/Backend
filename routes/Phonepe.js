@@ -1,5 +1,5 @@
 import express from "express"
-import { getStatusAfterPayment, payAndGetRedirectUrl } from "../controllers/Phonepe";
+import { getStatusAfterPayment, payAndGetRedirectUrl } from "../controllers/Phonepe.js";
 
 
 const router = express.Router();

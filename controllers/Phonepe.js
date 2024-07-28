@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import axios from 'axios'
 import Users from "../models/Users.js";
 import crypto from 'crypto';
-import axios from 'axios';
 import uniqid from 'uniqid'
 
 

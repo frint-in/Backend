@@ -251,4 +251,58 @@ export const findInternshipByCompany = async (req, res) => {
 
 
 
+export const getUsersWithapprovedByCompany = async (req, res) => {
+    try {
+      const internships = await Internship.find({ company: req.company.id });
+      const internshipIds = internships.map(internship => internship._id);
+  
+      const users = await Users.find({
+        "applications.internship": { $in: internshipIds },
+        "applications.status": "approved"
+      });
+  
+      res.status(200).json(users);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  
+  export const getUsersWithpendingByCompany = async (req, res) => {
+    try {
+      const internships = await Internship.find({ company: req.company.id });
+      const internshipIds = internships.map(internship => internship._id);
+  
+      const users = await Users.find({
+        "applications.internship": { $in: internshipIds },
+        "applications.status": "pending"
+      });
+  
+      res.status(200).json(users);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  
+  export const getUsersWithcompletedByCompany = async (req, res) => {
+    try {
+      const internships = await Internship.find({ company: req.company.id });
+      const internshipIds = internships.map(internship => internship._id);
+  
+      const users = await Users.find({
+        "applications.internship": { $in: internshipIds },
+        "applications.status": "completed"
+      });
+  
+      res.status(200).json(users);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+
+
+
+
 
