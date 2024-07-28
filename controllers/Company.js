@@ -147,7 +147,7 @@ export const signinCompany = AsyncHandler(async(req, res) =>{
         const token = jwt.sign({id:company._id}, process.env.JWT)
         res.cookie("access_token_company", token, {
             httpOnly:true
-        }).status(200).json({others, token})
+        }).status(200).json({message: 'Logged in successfully',others})
         }
     }catch (err) {
         console.log(err)
