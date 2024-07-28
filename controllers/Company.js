@@ -21,6 +21,7 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   process.env.DOMAIN
+  // process.env.DOMAIN_COMPANY
 )
 
 dotenv.config();
@@ -410,6 +411,130 @@ export const getUsersWithapprovedByCompany = async (req, res) => {
       res.status(500).json({ message: "Server error" });
     }
   };
+
+
+
+  export const createCalendarEvent = async (req, res) => {
+    try {
+  
+      // console.log('req.body', req.body);
+      const { summary, description, startDateTime, endDateTime, location, userId } = req.body;
+  
+      const companyId = req.company.id
+
+      console.log('companyId',companyId );
+
+
+      console.log('userId',userId );
+  
+      if (!userId || !companyId) {
+       return  res.status(400).json({message: 'userId or companyId not sent from the client'})
+      }
+  
+  
+  
+      const user = await Users.findById(userId)
+
+      console.log('user>>>>>', user);
+  
+      const company = await Company.findById(companyId)
+
+      console.log('company>>>>>>>>', company);
+      
+  
+      console.log('user>>>>>>>', user);
+      console.log('company>>>>>>>', company);
+  
+      if (!user) {
+       return  res.status(400).json({message: 'user not found'})
+      }
+  
+      if (!company) {
+        return  res.status(400).json({message: 'company not found'})
+       }
+      // Check if refresh token exists
+      if (!user.refreshToken) {
+        return res.status(400).json({ message: 'Refresh token not found. Login using google' });
+      }
+  
+      if (!company.refreshToken) {
+        return res.status(400).json({ message: 'Refresh token not found. Login using google' });
+      }
+
+        // Function to set credentials and get access token
+    const getAccessToken = async (refreshToken) => {
+      try {
+        oauth2Client.setCredentials({ refresh_token: refreshToken });
+        const { token } = await oauth2Client.getAccessToken();
+        return token;
+      } catch (err) {
+        console.error('Invalid or expired refresh token', tokenError);
+        return res.status(401).json({ message: 'Invalid or expired refresh token' });
+      }
+
+    };
+
+    const userAccessToken = await getAccessToken(user.refreshToken);
+    const companyAccessToken = await getAccessToken(company.refreshToken);
+
+  
+  
+      oauth2Client.setCredentials({ access_token: userAccessToken});
+  
+  
+      // Use the Calendar API
+      const calendar = google.calendar('v3');
+  
+      const userResponse =  calendar.events.insert({
+        auth: oauth2Client,
+        calendarId: 'primary',
+        requestBody: {
+          summary,
+          description,
+          location,
+          colorId: '7',
+          start: {
+            dateTime: new Date(startDateTime),
+          },
+          end: {
+            dateTime: new Date(endDateTime),
+          },
+        },
+      });
+
+          // Add the same event to company's calendar with the same meeting link
+    oauth2Client.setCredentials({ access_token: companyAccessToken });
+
+    const companyResponse =  calendar.events.insert({
+      auth: oauth2Client,
+      calendarId: 'primary',
+      requestBody: {
+        summary,
+        description,
+        location,
+        colorId: '7',
+        start: {
+          dateTime: new Date(startDateTime),
+        },
+        end: {
+          dateTime: new Date(endDateTime),
+        },
+      },
+    });
+
+
+  
+      res.status(201).json({ message: 'Event created successfully', userResponse, companyResponse });
+    } catch (err) {
+      console.error('Error in OAuth', err);
+      res.status(500).json({ message: 'Error while creating an event' });
+    }
+  };
+
+
+
+  
+  
 
 
 

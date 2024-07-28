@@ -506,43 +506,43 @@ export const applicants = async (req, res) => {
 
     //updating info only after the payment is successful
     //Doubt: what is the use of updating subuser after every applicant that applies to an internship?
-    //   await Internship.findByIdAndUpdate(
-    //   req.params.id,
-    //   {
-    //     $set: { subuser: req.user.id },
-    //   },
-    //   {
-    //     new: true,
-    //   }
-    // );
+      await Internship.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: { subuser: req.user.id },
+      },
+      {
+        new: true,
+      }
+    );
 
-    // const application = {
-    //   internship: req.params.id,
-    //   status: "pending",
-    // };
+    const application = {
+      internship: req.params.id,
+      status: "pending",
+    };
 
-    // const updatedUser = await Users.findByIdAndUpdate(
-    //   req.user.id,
-    //   {
-    //     $push: { applications: application },
-    //   },
-    //   {
-    //     new: true,
-    //   }
-    // );
+    const updatedUser = await Users.findByIdAndUpdate(
+      req.user.id,
+      {
+        $push: { applications: application },
+      },
+      {
+        new: true,
+      }
+    );
 
-    const paymentResponse = await axios.post(`${process.env.API_URL}/api/phonepe/payment`, {
-      name: user.uname,
-      number: user.phno,
-      amount: internship.price,
-      userId: req.user.id,
-      internshipId: req.params.id,
-    });
+    // const paymentResponse = await axios.post(`${process.env.API_URL}/api/phonepe/payment`, {
+    //   name: user.uname,
+    //   number: user.phno,
+    //   amount: internship.price,
+    //   userId: req.user.id,
+    //   internshipId: req.params.id,
+    // });
 
-    //sending the redirectUrl to the frontend 
-    return res.status(200).json({ redirectUrl: paymentResponse.data });
+    // //sending the redirectUrl to the frontend 
+    // return res.status(200).json({ redirectUrl: paymentResponse.data });
 
-    // res.status(200).json(updatedUser);
+    res.status(200).json(updatedUser);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

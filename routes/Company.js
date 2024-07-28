@@ -1,7 +1,8 @@
 import express from "express"
-import { deleteCompany, findAllCompanies, findCompanyById, findInternshipByCompany, getCompany, getUsersWithapprovedByCompany, getUsersWithcompletedByCompany, getUsersWithpendingByCompany, signinCompany, signupCompany, updateCompany } from "../controllers/Company.js";
+import { createCalendarEvent, deleteCompany, findAllCompanies, findCompanyById, findInternshipByCompany, getCompany, getUsersWithapprovedByCompany, getUsersWithcompletedByCompany, getUsersWithpendingByCompany, signinCompany, signupCompany, updateCompany } from "../controllers/Company.js";
 import { verifyCompanyToken } from "../verifyToken.js";
 import { findInternship } from "../controllers/Internship.js";
+
 
 
 const router = express.Router();
@@ -25,6 +26,10 @@ router.get('/findinternshipbycompany/:id', findInternshipByCompany)
 router.get("/getUsersWithapproved", verifyCompanyToken, getUsersWithapprovedByCompany);
 router.get("/getUsersWithpending", verifyCompanyToken, getUsersWithpendingByCompany);
 router.get("/getUsersWithcompleted", verifyCompanyToken, getUsersWithcompletedByCompany);
+
+
+//create-meeting-calender
+router.post('/create-meeting', verifyCompanyToken, createCalendarEvent )
 
 
 
