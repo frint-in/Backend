@@ -15,7 +15,9 @@ import Users from '../models/Users.js';
 
 
 import { google} from 'googleapis'
+import { SpacesServiceClient } from '@google-apps/meet';
 import { Storage } from '@google-cloud/storage';
+
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -61,6 +63,10 @@ cloudinary.config({
   api_key: process.env.api_key, 
   api_secret: process.env.api_secret 
 });
+
+
+
+// const {SpacesServiceClient} = require('@google-apps/meet').v2;
 
 
 
@@ -479,33 +485,81 @@ export const getUsersWithapprovedByCompany = async (req, res) => {
 
   
   
-      oauth2Client.setCredentials({ access_token: userAccessToken});
+      // oauth2Client.setCredentials({ access_token: userAccessToken});
+//first start with company acc, they create the meeting
+    oauth2Client.setCredentials({ access_token: companyAccessToken });
+
   
   
       // Use the Calendar API
       const calendar = google.calendar('v3');
-  
-      const userResponse =  calendar.events.insert({
-        auth: oauth2Client,
-        calendarId: 'primary',
-        requestBody: {
-          summary,
-          description,
-          location,
-          colorId: '7',
-          start: {
-            dateTime: new Date(startDateTime),
-          },
-          end: {
-            dateTime: new Date(endDateTime),
-          },
-        },
-      });
+      
+ 
 
-          // Add the same event to company's calendar with the same meeting link
-    oauth2Client.setCredentials({ access_token: companyAccessToken });
+      // Instantiate the Meet client
+const meetClient = new SpacesServiceClient({
+  authClient: oauth2Client
+});
 
-    const companyResponse =  calendar.events.insert({
+
+
+// Function to create a meeting space
+async function createMeetingSpace() {
+  try {
+    const request = {};
+    const response = await meetClient.createSpace(request);
+    return response;
+  } catch (error) {
+    console.log('error in creatingMeetingSpace>>>', error);
+  }
+ 
+}
+ // Create a meeting space
+ const meetingSpace = await createMeetingSpace();
+
+ console.log('the created meetingSpace>>>>>>>>>>>>',meetingSpace );
+
+ const conferenceData = {
+  entryPoints: [
+    {
+      entryPointType: 'video',
+      uri: meetingSpace[0].meetingUri,
+      label: meetingSpace[0].meetingCode,
+    },
+  ],
+  conferenceSolution: {
+    key: {
+      type: 'hangoutsMeet',
+    },
+  },
+  conferenceId: meetingSpace[0].meetingCode,
+};
+
+//  console.log('meeting name?>>>>>>>', meetingSpace[0].name);
+
+
+
+
+ const companyEvent = calendar.events.insert({
+   auth: oauth2Client,
+   calendarId: 'primary',
+   requestBody: {
+     summary,
+     description,
+     location,
+     colorId: '7',
+     start: { dateTime: new Date(startDateTime) },
+     end: { dateTime: new Date(endDateTime) },
+     conferenceData
+   },
+   conferenceDataVersion: 1,
+ });
+    //       // Add the same event to user's calendar with the same meeting link
+    // oauth2Client.setCredentials({ access_token: companyAccessToken });
+    oauth2Client.setCredentials({ access_token: userAccessToken});
+
+      
+    const userEvent = calendar.events.insert({
       auth: oauth2Client,
       calendarId: 'primary',
       requestBody: {
@@ -513,18 +567,19 @@ export const getUsersWithapprovedByCompany = async (req, res) => {
         description,
         location,
         colorId: '7',
-        start: {
-          dateTime: new Date(startDateTime),
-        },
-        end: {
-          dateTime: new Date(endDateTime),
-        },
+        start: { dateTime: new Date(startDateTime) },
+        end: { dateTime: new Date(endDateTime) },
+        conferenceData
       },
+      conferenceDataVersion: 1,
     });
 
 
+
+
   
-      res.status(201).json({ message: 'Event created successfully', userResponse, companyResponse });
+      // res.status(201).json({ message: 'Event created successfully', userResponse, companyResponse });
+      res.status(201).json({ message: 'Meet created successfully',  });
     } catch (err) {
       console.error('Error in OAuth', err);
       res.status(500).json({ message: 'Error while creating an event' });
