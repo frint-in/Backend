@@ -74,150 +74,301 @@ const bucket = storageGoogle.bucket(bucketName);
 //   }
 // };
 
+// export const updateUser = async (req, res) => {
+//     const user = await Users.findById(req.user.id);
+//     if (!user) {
+//       console.log("user not found");
+//       return res.status(401).json({ message: "user not found" });
+//     }
+//     try {
+//       upload.fields([
+//         { name: "profileImg", maxCount: 1 },
+//         { name: "resume", maxCount: 1 },
+//       ])(req, res, async function (err) {
+//         if (err instanceof multer.MulterError) {
+//           console.error(err);
+//           return res.status(409).json({ message: "Failed to add image" });
+//         } else if (err) {
+//           console.error(err);
+//           return res.status(409).json({ message: "internal server error" });
+//         }
+  
+//         console.log("req body in form upload>>>>>>", req.body);
+//         console.log("req files in form upload>>>>>>", req.files);
+  
+//         const profileImg = req.files["profileImg"];
+//         const resume = req.files["resume"];
+//         const updates = {};
+
+//           // Iterate over fields from req.body and add to updates if not empty
+//       for (const key in req.body) {
+//         if (req.body[key] !== "") {
+//           updates[key] = req.body[key];
+//         }
+//       }
+
+//          // Parse applications field if it exists
+//          if (updates.applications) {
+//           try {
+//             updates.applications = JSON.parse(updates.applications);
+//           } catch (e) {
+//             console.error("Error parsing applications field", e);
+//             return res.status(400).json({ message: "Invalid applications format" });
+//           }
+//         }
+
+
+  
+//         //-------------------------------avatar-----------------------------
+//         if (profileImg) {
+//           const previousAvatar = user.avatar;
+//           if (previousAvatar) {
+//             const oldFileName = previousAvatar.split("/").pop();
+//             console.log("oldFilename>>>>>>>>", oldFileName);
+//             const oldFile = bucket.file(oldFileName);
+//             const [exists] = await oldFile.exists();
+//             if (exists) {
+//               await oldFile.delete();
+//               console.log("Old file deleted successfully", previousAvatar);
+//             } else {
+//               console.log("Avatar not found in GCS bucket:", previousAvatar);
+//             }
+//           }
+  
+//           const newFileName = Date.now() + "-" + profileImg[0].originalname;
+//           const blob = bucket.file(newFileName);
+//           const blobStream = blob.createWriteStream({
+//             metadata: {
+//               contentType: profileImg[0].mimetype,
+//             },
+//             public: true,
+//           });
+  
+//           blobStream.on("error", (err) => {
+//             console.error("Blob stream error", err);
+//             return res.status(500).json({message :`Error uploading file. Please try again`});
+//           });
+  
+//           blobStream.on("finish", async () => {
+//             const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+//             updates.avatar = publicUrl;
+//             console.log('finished uploading>>>>>>>', publicUrl);
+//             console.log('updates object after photo upload>>>>>>', updates);
+//           });
+  
+//           blobStream.end(profileImg[0].buffer);
+//         } else {
+//           console.log("No profile image uploaded");
+//         }
+  
+//         //-------------------------------resume-----------------------------
+//         if (resume) {
+//           const previousResume = user.resume;
+//           if (previousResume) {
+//             const oldFileName = previousResume.split("/").pop();
+//             console.log("oldResumeFilename>>>>>>>>", oldFileName);
+//             const oldFile = bucket.file(oldFileName);
+//             const [exists] = await oldFile.exists();
+//             if (exists) {
+//               await oldFile.delete();
+//               console.log("Old resume deleted successfully", previousResume);
+//             } else {
+//               console.log("Resume not found in GCS bucket:", previousResume);
+//             }
+//           }
+  
+//           const newResumeFileName = Date.now() + "-" + resume[0].originalname;
+//           const resumeBlob = bucket.file(newResumeFileName);
+//           const resumeBlobStream = resumeBlob.createWriteStream({
+//             metadata: {
+//               contentType: resume[0].mimetype,
+//             },
+//             public: true,
+//           });
+  
+//           resumeBlobStream.on("error", (err) => {
+//             console.error("Resume blob stream error", err);
+//             return res.status(500).json({message :`Error uploading file. Please try again`});
+//           });
+  
+//           resumeBlobStream.on("finish", async () => {
+//             const resumePublicUrl = `https://storage.googleapis.com/${bucket.name}/${newResumeFileName}`;
+//             updates.resume = resumePublicUrl;
+
+
+//           });
+  
+//           resumeBlobStream.end(resume[0].buffer);
+//         } else {
+//           console.log("No resume uploaded");
+//         }
+  
+//         //-----------------------------update database----------------------------------
+//         const updateDatabase = async () => {
+//           try {
+//             console.log('final update object before updating in the db>>>>>>>', updates); 
+//             const updatedUser = await Users.findByIdAndUpdate(
+//               req.user.id,
+//               { $set: updates },
+//               { new: true, runValidators: true }
+//             ).lean();
+  
+//             delete updatedUser.password;
+//             delete updatedUser.refreshToken;
+
+//             console.log('updatedUser');
+
+//             res.status(200).json({message: 'Profile Edited Successfully', user: updatedUser });
+//           } catch (updateErr) {
+//             console.error("Database update error", updateErr);
+//             res.status(500).json({ message: "server timed out. Please try later" });
+//           }
+//         };
+  
+//         // Ensure all streams finish before updating the database
+//         const interval = setInterval(() => {
+//           if (
+//             (!profileImg || updates.avatar) &&
+//             (!resume || updates.resume)
+//           ) {
+//             clearInterval(interval);
+//             updateDatabase();
+//           }
+//         }, 100);
+  
+//       });
+//     } catch (err) {
+//       console.log(err);
+//       res.status(err.statusCode || 500).json({ error: err.message });
+//     }
+//   };
+  
+
+
 export const updateUser = async (req, res) => {
-    const user = await Users.findById(req.user.id);
-    if (!user) {
-      console.log("user not found");
-      return res.status(401).json({ message: "user not found" });
-    }
-    try {
+  const user = await Users.findById(req.user.id);
+  if (!user) {
+    console.log("user not found");
+    return res.status(401).json({ message: "user not found" });
+  }
+
+  try {
+    await new Promise((resolve, reject) => {
       upload.fields([
         { name: "profileImg", maxCount: 1 },
         { name: "resume", maxCount: 1 },
-      ])(req, res, async function (err) {
+      ])(req, res, function (err) {
         if (err instanceof multer.MulterError) {
           console.error(err);
-          return res.status(409).json({ message: "Failed to add image" });
+          return reject({ status: 409, message: "Failed to add image" });
         } else if (err) {
           console.error(err);
-          return res.status(409).json({ message: "internal server error" });
+          return reject({ status: 409, message: "internal server error" });
         }
-  
-        console.log("req body in form upload>>>>>>", req.body);
-        console.log("req files in form upload>>>>>>", req.files);
-  
-        const profileImg = req.files["profileImg"];
-        const resume = req.files["resume"];
-        const updates = {};
-
-          // Iterate over fields from req.body and add to updates if not empty
-      for (const key in req.body) {
-        if (req.body[key] !== "") {
-          updates[key] = req.body[key];
-        }
-      }
-
-
-  
-        //-------------------------------avatar-----------------------------
-        if (profileImg) {
-          const previousAvatar = user.avatar;
-          if (previousAvatar) {
-            const oldFileName = previousAvatar.split("/").pop();
-            console.log("oldFilename>>>>>>>>", oldFileName);
-            const oldFile = bucket.file(oldFileName);
-            await oldFile.delete();
-            console.log("old file deleted successfully", previousAvatar);
-          }
-  
-          const newFileName = Date.now() + "-" + profileImg[0].originalname;
-          const blob = bucket.file(newFileName);
-          const blobStream = blob.createWriteStream({
-            metadata: {
-              contentType: profileImg[0].mimetype,
-            },
-            public: true,
-          });
-  
-          blobStream.on("error", (err) => {
-            console.error("Blob stream error", err);
-            return res.status(500).json({message :`Error uploading file. Please try again`});
-          });
-  
-          blobStream.on("finish", async () => {
-            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
-            updates.avatar = publicUrl;
-          });
-  
-          blobStream.end(profileImg[0].buffer);
-        } else {
-          console.log("No profile image uploaded");
-        }
-  
-        //-------------------------------resume-----------------------------
-        if (resume) {
-          const previousResume = user.resume;
-          if (previousResume) {
-            const oldFileName = previousResume.split("/").pop();
-            console.log("oldResumeFilename>>>>>>>>", oldFileName);
-            const oldFile = bucket.file(oldFileName);
-            await oldFile.delete();
-            console.log("old resume deleted successfully", previousResume);
-          }
-  
-          const newResumeFileName = Date.now() + "-" + resume[0].originalname;
-          const resumeBlob = bucket.file(newResumeFileName);
-          const resumeBlobStream = resumeBlob.createWriteStream({
-            metadata: {
-              contentType: resume[0].mimetype,
-            },
-            public: true,
-          });
-  
-          resumeBlobStream.on("error", (err) => {
-            console.error("Resume blob stream error", err);
-            return res.status(500).json({message :`Error uploading file. Please try again`});
-          });
-  
-          resumeBlobStream.on("finish", async () => {
-            const resumePublicUrl = `https://storage.googleapis.com/${bucket.name}/${newResumeFileName}`;
-            updates.resume = resumePublicUrl;
-          });
-  
-          resumeBlobStream.end(resume[0].buffer);
-        } else {
-          console.log("No resume uploaded");
-        }
-  
-        //-----------------------------update database----------------------------------
-        const updateDatabase = async () => {
-          try {
-            const updatedUser = await Users.findByIdAndUpdate(
-              req.user.id,
-              { $set: updates },
-              { new: true, runValidators: true }
-            ).lean();
-  
-            delete updatedUser.password;
-            delete updatedUser.refreshToken;
-
-            console.log('updatedUser');
-
-            res.status(200).json({message: 'Profile Edited Successfully', user: updatedUser });
-          } catch (updateErr) {
-            console.error("Database update error", updateErr);
-            res.status(500).json({ message: "server timed out. Please try later" });
-          }
-        };
-  
-        // Ensure all streams finish before updating the database
-        const interval = setInterval(() => {
-          if (
-            (!profileImg || updates.avatar) &&
-            (!resume || updates.resume)
-          ) {
-            clearInterval(interval);
-            updateDatabase();
-          }
-        }, 100);
-  
+        resolve();
       });
-    } catch (err) {
-      console.log(err);
-      res.status(err.statusCode || 500).json({ error: err.message });
+    });
+
+    console.log("req body in form upload>>>>>>", req.body);
+    console.log("req files in form upload>>>>>>", req.files);
+
+    const profileImg = req.files["profileImg"];
+    const resume = req.files["resume"];
+    const updates = {};
+
+    // Iterate over fields from req.body and add to updates if not empty
+    for (const key in req.body) {
+      if (req.body[key] !== "") {
+        updates[key] = req.body[key];
+      }
     }
-  };
-  
+
+    // Parse applications field if it exists
+    if (updates.applications) {
+      try {
+        updates.applications = JSON.parse(updates.applications);
+      } catch (e) {
+        console.error("Error parsing applications field", e);
+        return res.status(400).json({ message: "Invalid applications format" });
+      }
+    }
+
+    // Function to handle file upload and return a Promise
+    const uploadFile = async (file, type) => {
+      if (file) {
+        const previousFile = type === 'profileImg' ? user.avatar : user.resume;
+        if (previousFile) {
+          const oldFileName = previousFile.split("/").pop();
+          console.log("oldFileName>>>>>>>>", oldFileName);
+          const oldFile = bucket.file(oldFileName);
+          const [exists] = await oldFile.exists();
+          if (exists) {
+            await oldFile.delete();
+            console.log("Old file deleted successfully", previousFile);
+          } else {
+            console.log(`${type} not found in GCS bucket:`, previousFile);
+          }
+        }
+
+        const newFileName = Date.now() + "-" + file[0].originalname;
+        const blob = bucket.file(newFileName);
+        const blobStream = blob.createWriteStream({
+          metadata: {
+            contentType: file[0].mimetype,
+          },
+          public: true,
+        });
+
+        return new Promise((resolve, reject) => {
+          blobStream.on("error", (err) => {
+            console.error(`${type} blob stream error`, err);
+            reject(err);
+          });
+
+          blobStream.on("finish", () => {
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+            updates[type === 'profileImg' ? 'avatar' : 'resume'] = publicUrl;
+            console.log(`finished uploading ${type}>>>>>>>`, publicUrl);
+            resolve();
+          });
+
+          blobStream.end(file[0].buffer);
+        });
+      } else {
+        console.log(`No ${type} uploaded`);
+      }
+    };
+
+    // Upload files and wait for completion
+    await Promise.all([
+      uploadFile(profileImg, 'profileImg'),
+      uploadFile(resume, 'resume')
+    ]);
+
+    // Update database
+    try {
+      console.log('final update object before updating in the db>>>>>>>', updates);
+      const updatedUser = await Users.findByIdAndUpdate(
+        req.user.id,
+        { $set: updates },
+        { new: true, runValidators: true }
+      ).lean();
+
+      delete updatedUser.password;
+      delete updatedUser.refreshToken;
+
+      console.log('updatedUser');
+      res.status(200).json({ message: 'Profile Edited Successfully', user: updatedUser });
+    } catch (updateErr) {
+      console.error("Database update error", updateErr);
+      res.status(500).json({ message: "server timed out. Please try later" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
 
 export const deleteUser = async (req, res) => {
   if (req.params.id === req.user.id) {
