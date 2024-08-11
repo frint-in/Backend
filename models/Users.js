@@ -13,6 +13,29 @@ const InternshipApplicationSchema = new mongoose.Schema({
    
 })
 
+
+const EducationSchema = new mongoose.Schema({
+    classX: {
+        school: { type: String },
+        boards: { type: String },
+        percentage: { type: String },
+        total: { type: String }
+    },
+    classXII: {
+        school: { type: String },
+        boards: { type: String },
+        percentage: { type: String },
+        total: { type: String }
+    },
+    graduation: {
+        college: { type: String },
+        university: { type: String },
+        percentage: { type: String },
+        total: { type: String }
+    },
+    extraCertifications: { type: String }
+});
+
  
 
 
@@ -57,20 +80,15 @@ const UserSchema = new mongoose.Schema({
         
     },
     specialisation: {
-        type:String,
-        
+        type: [String],  
     },
-    education: {
-        type:String,
-        
-    },
+    education: EducationSchema,
     dob: {
         type:String,
         
     },
     languages: {
-        type:String,
-        
+        type: [String], 
     },
     skills: {
         type:String,
@@ -79,6 +97,12 @@ const UserSchema = new mongoose.Schema({
     resume: {
         type:String,
         
+    },
+    achievements: {
+        type: String
+    },
+    experience: {
+        type: String
     },
     seminar: {
         type: String,
@@ -103,6 +127,10 @@ const UserSchema = new mongoose.Schema({
         type:Date
     }, 
     isVerfied: {
+        type: Boolean,
+        default: false,
+    },
+    isOnboarded: {
         type: Boolean,
         default: false,
     },

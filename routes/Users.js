@@ -11,6 +11,7 @@ import {
   getseminaruser,
   verifyUserEmail,
   verifyUserOtp,
+  onboardUser,
 } from "../controllers/Users.js";
 import { verifyCompanyToken, verifyToken } from "../verifyToken.js";
 import fast2sms from "fast-two-sms";
@@ -20,6 +21,9 @@ const router = express.Router();
 
 //update
 router.put("/updateuser", verifyToken, updateUser);
+// router.put("/onboarding",  onboardUser);
+router.put("/onboarding", verifyToken,  onboardUser);
+
 router.put("/seminar", verifyToken, Seminar);
 router.get("/getseminaruser", getseminaruser);
 
