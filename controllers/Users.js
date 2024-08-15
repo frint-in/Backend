@@ -278,20 +278,17 @@ export const updateUser = async (req, res) => {
 
     // Iterate over fields from req.body and add to updates if not empty
     for (const key in req.body) {
-      if (req.body[key] !== "") {
-        updates[key] = req.body[key];
+      if (req.body[key] !== "" && key !== "finalStep") {
+        if (key === "specialisation" || key === "languages" || key === "education" ||      key === "skills" ||
+          key === "achievements" ||
+          key === "experience") {
+          updates[key] = JSON.parse(req.body[key]);
+        } else {
+          updates[key] = req.body[key];
+        }
       }
     }
 
-    // Parse applications field if it exists
-    if (updates.applications) {
-      try {
-        updates.applications = JSON.parse(updates.applications);
-      } catch (e) {
-        console.error("Error parsing applications field", e);
-        return res.status(400).json({ message: "Invalid applications format" });
-      }
-    }
 
     // Function to handle file upload and return a Promise
     const uploadFile = async (file, type) => {
