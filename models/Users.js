@@ -19,21 +19,21 @@ const EducationSchema = new mongoose.Schema({
         school: { type: String },
         boards: { type: String },
         percentage: { type: String },
-        total: { type: String }
+        // total: { type: String }
     },
     classXII: {
         school: { type: String },
         boards: { type: String },
         percentage: { type: String },
-        total: { type: String }
+        // total: { type: String }
     },
     graduation: {
         college: { type: String },
         university: { type: String },
         percentage: { type: String },
-        total: { type: String }
+        // total: { type: String }
     },
-    extraCertifications: { type: String }
+    // extraCertifications: { type: String }
 });
 
  
@@ -91,7 +91,7 @@ const UserSchema = new mongoose.Schema({
         type: [String], 
     },
     skills: {
-        type:String,
+        type: [String], 
         
     },
     resume: {
@@ -99,10 +99,10 @@ const UserSchema = new mongoose.Schema({
         
     },
     achievements: {
-        type: String
+        type: [String], 
     },
     experience: {
-        type: String
+        type: [String], 
     },
     seminar: {
         type: String,

@@ -406,7 +406,9 @@ export const onboardUser = async (req, res) => {
     // Iterate over fields from req.body and add to updates if not empty
     for (const key in req.body) {
       if (req.body[key] !== "" && key !== "finalStep") {
-        if (key === "specialisation" || key === "languages" || key === "education") {
+        if (key === "specialisation" || key === "languages" || key === "education" ||      key === "skills" ||
+          key === "achievements" ||
+          key === "experience") {
           updates[key] = JSON.parse(req.body[key]);
         } else {
           updates[key] = req.body[key];
