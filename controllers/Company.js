@@ -3,7 +3,8 @@ import Company from '../models/Company.js'
 import bcrypt from "bcrypt"
 import jwt  from "jsonwebtoken";
 import { resolveContent } from "nodemailer/lib/shared/index.js";
-import sendEmail from "../sendEmail.js";
+//weird google refresh token bug when making meetings
+import sendEmail from "../sendEmail.js"; //do not remove this
 import crypto from "crypto"
 import Internship from "../models/Internship.js";
 import { AsyncHandler } from '../utils/AsyncHandler.js';
@@ -17,6 +18,7 @@ import Users from '../models/Users.js';
 import { google} from 'googleapis'
 import { SpacesServiceClient } from '@google-apps/meet';
 import { Storage } from '@google-cloud/storage';
+import { sendEmailMain } from '../helpers/mailer.js';
 
 
 const oauth2Client = new google.auth.OAuth2(
@@ -474,7 +476,7 @@ export const getUsersWithapprovedByCompany = async (req, res) => {
         const { token } = await oauth2Client.getAccessToken();
         return token;
       } catch (err) {
-        console.error('Invalid or expired refresh token', tokenError);
+        console.error('Invalid or expired refresh token', err);
         return res.status(401).json({ message: 'Invalid or expired refresh token' });
       }
 
@@ -576,10 +578,33 @@ async function createMeetingSpace() {
 
 
 
+    const meetingDetails = {
+      summary,
+      description,
+      startDateTime,
+      endDateTime,
+      location,
+      meetingLink: meetingSpace[0].meetingUri, 
+  };
+
+
+    await sendEmailMain({
+      email: company.email,
+      emailType: "MEETING",
+      meetingDetails
+  });
+  
+  await sendEmailMain({
+      email: user.email,
+      emailType: "MEETING",
+      meetingDetails
+  });
+
+
 
   
       // res.status(201).json({ message: 'Event created successfully', userResponse, companyResponse });
-      res.status(201).json({ message: 'Meet created successfully',  });
+      res.status(201).json({ message: 'Meet created successfully', meetingDetails  });
     } catch (err) {
       console.error('Error in OAuth', err);
       res.status(500).json({ message: 'Error while creating an event' });
