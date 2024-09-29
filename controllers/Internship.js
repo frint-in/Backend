@@ -126,44 +126,67 @@ export const addInternship = AsyncHandler(async (req, res) => {
       console.log("req body in add internship>>>>", req.body);
 
       const file = req.file;
-      if (!file) {
-        console.log("No file found");
-        return res.status(400).send("No file uploaded");
-      }
+      let publicUrl = null;
 
-      console.log("req file>>>>>>>>>.", req.file);
+      // If file is present, upload it
+      if (file) {
+        console.log("req file>>>>>>>>>.", req.file);
 
-      // Google Cloud Storage
-      const fileName = Date.now() + "-" + file.originalname;
+        // Google Cloud Storage
+        const fileName = Date.now() + "-" + file.originalname;
 
-      console.log("1");
-      const blob = bucket.file(fileName);
+        console.log("1");
+        const blob = bucket.file(fileName);
 
-      console.log("2");
-      const blobStream = blob.createWriteStream({
-        metadata: {
-          contentType: file.mimetype,
-        },
-        public: true,
-      });
+        console.log("2");
+        const blobStream = blob.createWriteStream({
+          metadata: {
+            contentType: file.mimetype,
+          },
+          public: true,
+        });
 
-      console.log("3");
+        console.log("3");
 
-      blobStream.on("error", (err) => {
-        console.log("4");
-        console.error("Blob stream error", err);
-        return res.status(500).send(`Error uploading file: ${err}`);
-      });
+        blobStream.on("error", (err) => {
+          console.log("4");
+          console.error("Blob stream error", err);
+          return res.status(500).send(`Error uploading file: ${err}`);
+        });
 
-      blobStream.on("finish", async () => {
-        console.log("5");
+        blobStream.on("finish", async () => {
+          console.log("5");
 
-        // Construct the public URL
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+          // Construct the public URL
+          publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
-        // Create a new Internship with the image URL
+          // Create a new Internship with the image URL
+          const newInternship = new Internship({
+            imgurl: publicUrl,
+            ...req.body,
+            company: req.company.id,
+          });
+          const savedInternship = await newInternship.save();
+          res.status(200).json(savedInternship);
+
+          // Update the company with the new internship
+          const company = await Company.findByIdAndUpdate(
+            req.company.id,
+            { $push: { internships: savedInternship._id } },
+            { new: true }
+          );
+
+          if (!company) {
+            throw new Error("Company not found");
+          }
+        });
+
+        blobStream.end(file.buffer);
+      } else {
+        // No file uploaded, create internship without image URL
+        console.log("No file found, creating internship without image");
+
         const newInternship = new Internship({
-          imgurl: publicUrl,
           ...req.body,
           company: req.company.id,
         });
@@ -180,9 +203,7 @@ export const addInternship = AsyncHandler(async (req, res) => {
         if (!company) {
           throw new Error("Company not found");
         }
-      });
-
-      blobStream.end(file.buffer);
+      }
     });
   } catch (err) {
     console.error(err);
@@ -191,14 +212,13 @@ export const addInternship = AsyncHandler(async (req, res) => {
   }
 });
 
+
 export const deleteInternship = AsyncHandler(async (req, res) => {
   try {
     const internship = await Internship.findById(req.params.id);
     if (!internship) {
       throw new ApiError(409, "internship not found");
     }
-    // // if(req.user.id === internship.userID){
-    // // }
 
     if (internship.imgurl) {
       try {
@@ -219,205 +239,255 @@ export const deleteInternship = AsyncHandler(async (req, res) => {
   }
 });
 
-// export const updateInternship = AsyncHandler (async(req, res)=>{
-
-//     try{
-
-//         const internship = await Internship.findById(req.params.id)
-//         console.log("internship before update>>>>", internship);
-//         if(!internship){
-//             throw new ApiError(409, 'internship not found')
-//         }
-
-//         const internshipImgUrl = internship.imgurl
-
-//         const oldFileName = internshipImgUrl.split('/').pop();
-//         const newFile = req.file
-
-//         console.log("req body>>>>>>>>>>>", req.body);
-//         console.log("req file>>>>>>>>>>>", req.file);
-
-//         console.log("oldFilename>>>>>>>>", oldFileName);
-//       const newFileName = Date.now() + "-" + newFile?.originalname
-//       if (newFile) {
-//           // Delete the old file
-//           const oldFile = bucket.file(oldFileName);
-
-//           console.log("old file name from bucket selected>>>>", oldFile);
-//           await oldFile.delete();
-
-//           // Upload the new file with the new name
-//       const blob = bucket.file(newFileName);
-//       const blobStream = blob.createWriteStream({
-//         metadata: {
-//           contentType: newFile.mimetype
-//         },
-//         public: true
-//       });
-
-//       blobStream.on('error', (err) => {
-//         res.status(500).send(`Error uploading file: ${err}`);
-//       });
-
-//       blobStream.on('finish', async () => {
-
-//             // Construct the public URL
-//             const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
-
-//         const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {...req.body, imgurl:publicUrl })
-//         // res.status(200).json(updatedInternship)
-//         res.status(200).json({message: "intership updated successfully", updatedInternship})
-
-//       });
-
-//       blobStream.end(newFile.buffer);
-
-//       }else{
-
-//                 const updatedInternship = await Internship.findByIdAndUpdate(req.params.id , {
-//                   $set:req.body,
-//               }, {
-//                   new:true
-//               })
-
-//               console.log("updated internship>>>>>", updatedInternship);
-//               res.status(200).json({message: "intership updated successfully", updatedInternship})
-//       }
-//     // res.status(200).json(updatedInternship)
-
-//         // if(req.user.id === Internship.userID){
-//             // get current data for this intenshipid from db
-//             // check current form data for null in req.body
-//             // replace null values from req.body from current data
-
-//         // }
-//     }catch(err){
-//         res.status(err.statusCode).send(err.message);
-//     }
-// })
-
 export const updateInternship = AsyncHandler(async (req, res) => {
   try {
+    // Handle image upload if a file is provided
     upload.single("image")(req, res, async function (err) {
-      console.log("1");
       // Error handling
       if (err instanceof multer.MulterError) {
-        console.log("2");
-
         console.error(err);
         return res.status(409).json({ error: "Failed to add image" });
       } else if (err) {
-        console.log("3");
-
         console.error(err);
         return res.status(409).json({ error: "Internal server error" });
       }
 
-      console.log("4");
-
-      // Google Cloud Storage
-
-      console.log("req body in edit internship>>>>", req.body);
-      console.log("5 body");
-
+      // Find the internship by ID
       const internship = await Internship.findById(req.params.id);
-      console.log("internship before update>>>>", internship);
       if (!internship) {
-        throw new ApiError(409, "internship not found");
+        return res.status(409).json({ error: "Internship not found" });
       }
 
-      const internshipImgUrl = internship.imgurl;
-      const oldFileName = internshipImgUrl.split("/").pop();
       const newFile = req.file;
 
-      console.log("req body>>>>>>>>>>>", req.body);
-      console.log("req file>>>>>>>>>>>", req.file);
-      console.log("req imgurl>>>>>>>>>>>", req.imgurl);
-      console.log("oldFilename>>>>>>>>", oldFileName);
-
-      const newFileName = Date.now() + "-" + newFile?.originalname;
-
-      console.log("5 1");
-
+      // Proceed with image update only if a new image file is uploaded
       if (newFile) {
-        console.log("6 main 1");
+        const internshipImgUrl = internship.imgurl;
+        const oldFileName = internshipImgUrl.split("/").pop();
+        const newFileName = Date.now() + "-" + newFile.originalname;
 
-        // Delete the old file
-        const oldFile = bucket.file(oldFileName);
-
-        // console.log("old file name from bucket selected>>>>", oldFile);
-        await oldFile.delete();
-
-
-        // Upload the new file with the new name
-        const blob = bucket.file(newFileName);
-        const blobStream = blob.createWriteStream({
-          metadata: {
-            contentType: newFile.mimetype,
-          },
-          public: true,
-        });
-
-        console.log("6 main 4");
-
-        blobStream.on("error", (err) => {
-          res.status(500).send(`Error uploading file: ${err}`);
-        });
-
-        blobStream.on("finish", async () => {
-          // Construct the public URL
-          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
-          const updatedInternship = await Internship.findByIdAndUpdate(
-            req.params.id,
-            {
-              ...req.body,
-              imgurl: publicUrl,
-            },
-            {
-              new: true,
-            }
-          );
-
-          res
-            .status(200)
-            .json({
-              message: "Internship updated successfully",
-              updatedInternship,
-            });
-        });
-
-        blobStream.end(newFile.buffer);
-      } else {
         try {
-          console.log("nigg1 ");
+          // Delete the old file
+          const oldFile = bucket.file(oldFileName);
+          await oldFile.delete();
 
+          // Upload the new file
+          const blob = bucket.file(newFileName);
+          const blobStream = blob.createWriteStream({
+            metadata: {
+              contentType: newFile.mimetype,
+            },
+            public: true,
+          });
+
+          blobStream.on("error", (err) => {
+            return res.status(500).send(`Error uploading file: ${err}`);
+          });
+
+          blobStream.on("finish", async () => {
+            // Construct the public URL
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+
+            // Update internship with new image URL and other fields
+            const updatedInternship = await Internship.findByIdAndUpdate(
+              req.params.id,
+              { ...req.body, imgurl: publicUrl },
+              { new: true }
+            );
+
+            return res
+              .status(200)
+              .json({ message: "Internship updated successfully", updatedInternship });
+          });
+
+          blobStream.end(newFile.buffer);
+        } catch (err) {
+          console.error("Error updating image:", err);
+          return res.status(500).json({ error: "Failed to update image" });
+        }
+      } else {
+        // If no new image file is uploaded, just update other fields
+        try {
           const updatedInternship = await Internship.findByIdAndUpdate(
             req.params.id,
-            {
-              $set: req.body,
-            },
-            {
-              new: true,
-            }
+            { $set: req.body }, // No image field update
+            { new: true }
           );
 
-          console.log("updated internship>>>>>", updatedInternship);
-          res
+          return res
             .status(200)
-            .json({
-              message: "Internship updated successfully",
-              updatedInternship,
-            });
+            .json({ message: "Internship updated successfully", updatedInternship });
         } catch (err) {
-          console.log("error while updating in else block");
-          console.error("the error as follows>>>>>>>", err);
+          console.error("Error updating internship:", err);
+          return res.status(500).json({ error: "Failed to update internship" });
         }
       }
     });
   } catch (err) {
-    res.status(err.statusCode || 500).send(err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
+
+
+// export const updateInternship = AsyncHandler(async (req, res) => {
+//   try {
+//     upload.single("image")(req, res, async function (err) {
+//       console.log("1");
+//       // Error handling
+//       if (err instanceof multer.MulterError) {
+//         console.log("2");
+
+//         console.error(err);
+//         return res.status(409).json({ error: "Failed to add image" });
+//       } else if (err) {
+//         console.log("3");
+
+//         console.error(err);
+//         return res.status(409).json({ error: "Internal server error" });
+//       }
+
+//       console.log("4");
+
+//       // Google Cloud Storage
+
+//       console.log("req body in edit internship>>>>", req.body);
+//       console.log("5 body");
+
+//       const internship = await Internship.findById(req.params.id);
+//       console.log("internship before update>>>>", internship);
+//       if (!internship) {
+//         throw new ApiError(409, "internship not found");
+//       }
+
+//       const internshipImgUrl = internship.imgurl;
+//       const oldFileName = internshipImgUrl.split("/").pop();
+//       const newFile = req.file;
+
+//       console.log("req body>>>>>>>>>>>", req.body);
+//       console.log("req file>>>>>>>>>>>", req.file);
+//       console.log("req imgurl>>>>>>>>>>>", req.imgurl);
+//       console.log("oldFilename>>>>>>>>", oldFileName);
+
+//       const newFileName = Date.now() + "-" + newFile?.originalname;
+
+//       console.log("5 1");
+
+//       if (newFile) {
+//         console.log("6 main 1");
+
+//         // Delete the old file
+//         const oldFile = bucket.file(oldFileName);
+
+//         // console.log("old file name from bucket selected>>>>", oldFile);
+//         await oldFile.delete();
+
+
+//         // Upload the new file with the new name
+//         const blob = bucket.file(newFileName);
+//         const blobStream = blob.createWriteStream({
+//           metadata: {
+//             contentType: newFile.mimetype,
+//           },
+//           public: true,
+//         });
+
+//         console.log("6 main 4");
+
+//         blobStream.on("error", (err) => {
+//           res.status(500).send(`Error uploading file: ${err}`);
+//         });
+
+//         blobStream.on("finish", async () => {
+//           // Construct the public URL
+//           const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+//           const updatedInternship = await Internship.findByIdAndUpdate(
+//             req.params.id,
+//             {
+//               ...req.body,
+//               imgurl: publicUrl,
+//             },
+//             {
+//               new: true,
+//             }
+//           );
+
+//           res
+//             .status(200)
+//             .json({
+//               message: "Internship updated successfully",
+//               updatedInternship,
+//             });
+//         });
+
+//         blobStream.end(newFile.buffer);
+//       } else {
+//         try {
+//           console.log("nigg1 ");
+
+//           const updatedInternship = await Internship.findByIdAndUpdate(
+//             req.params.id,
+//             {
+//               $set: req.body,
+//             },
+//             {
+//               new: true,
+//             }
+//           );
+
+//           console.log("updated internship>>>>>", updatedInternship);
+//           res
+//             .status(200)
+//             .json({
+//               message: "Internship updated successfully",
+//               updatedInternship,
+//             });
+//         } catch (err) {
+//           console.log("error while updating in else block");
+//           console.error("the error as follows>>>>>>>", err);
+//         }
+//       }
+//     });
+//   } catch (err) {
+//     res.status(err.statusCode || 500).send(err.message);
+//   }
+// });
+
+// export const updateInternship = AsyncHandler(async (req, res) => {
+//   try {
+//     // Find the internship by ID
+//     const internship = await Internship.findById(req.params.id);
+//     console.log("Internship before update>>>>", internship);
+    
+//     // Check if the internship exists
+//     if (!internship) {
+//       throw new ApiError(409, "Internship not found");
+//     }
+
+//     // Update the internship without image handling
+//     const updatedInternship = await Internship.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         $set: req.body, // Update the fields in req.body
+//       },
+//       {
+//         new: true, // Return the updated document
+//       }
+//     );
+
+//     console.log("Updated internship>>>>>", updatedInternship);
+
+//     // Send success response with the updated internship
+//     res.status(200).json({
+//       message: "Internship updated successfully",
+//       updatedInternship,
+//     });
+//   } catch (err) {
+//     // Handle errors
+//     console.error("Error while updating internship>>>>", err);
+//     res.status(err.statusCode || 500).send(err.message);
+//   }
+// });
+
 
 export const findInternship = async (req, res) => {
   try {

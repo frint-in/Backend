@@ -243,6 +243,31 @@ const bucket = storageGoogle.bucket(bucketName);
 //     }
 //   };
   
+export const userBasicDetails = async (req, res) => {
+  try {
+    // Find the user by ID
+    const user = await Users.findById(req.user.id);
+    if (!user) {
+      console.log("User not found");
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { phno, ...otherFields } = req.body;
+
+    // Update any other fields provided in the request
+    Object.assign(user, otherFields);
+
+    // Save the updated user data
+    await user.save();
+
+    console.log("User updated successfully");
+    return res.status(200).json({ message: "User updated successfully", user });
+
+  } catch (error) {
+    console.error("Error updating user details", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 export const updateUser = async (req, res) => {
@@ -719,6 +744,7 @@ export const verifyUserEmail = async (req, res) => {
     console.log("user>>>>", user);
 
     user.isVerfied = true;
+    user.isGoogleUser = true;
     user.verifyToken = undefined;
     user.verifyTokenExpiry = undefined;
     await user.save();
@@ -771,6 +797,3 @@ export const verifyUserOtp = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
-

@@ -1,11 +1,10 @@
 import jwt from "jsonwebtoken";
 import Users from "./models/Users.js";
 import Company from "./models/Company.js";
-import dotenv from 'dotenv'
-import { google } from 'googleapis';
+import dotenv from "dotenv";
+import { google } from "googleapis";
 
-dotenv.config()
-
+dotenv.config();
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -13,67 +12,63 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.DOMAIN
 );
 
-
 export const verifyToken = async (req, res, next) => {
-  const token = req.cookies.access_token
-  if(!token){
-   return res.status(401).json({ error: 'Error in access_token' });
-}
+  const token = req.cookies.access_token;
+  if (!token) {
+    return res.status(401).json({ error: "Error in access_token" });
+  }
 
   await jwt.verify(token, process.env.JWT, async (err, user) => {
-   if (err){
-       
-       return res.status(401).json({ error: 'Error in verifying token' });
-   }
-   else{
-       req.user = user
+    if (err) {
+      return res.status(401).json({ error: "Error in verifying token" });
+    } else {
+      req.user = user;
 
-       console.log('user.id in verifyToken>>>>>>>', user.id);
+      console.log("user.id in verifyToken>>>>>>>", user.id);
       //  console.log('user._id in verifyToken>>>>>>>', user._id);
 
-       const dbUser = await Users.findById(user.id);
-       if (!dbUser) {
-         return res.status(404).json({ error: 'User not found' });
-       }
+      const dbUser = await Users.findById(user.id);
+      if (!dbUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-       console.log('dbuser>>>>>>>>>>', dbUser);
+      console.log("dbuser>>>>>>>>>>", dbUser);
 
-       if (dbUser.isGoogleUser) {
-          // Set credentials with the refresh token
-          oauth2Client.setCredentials({ refresh_token: dbUser.refreshToken });
-  
-          // Check if the access token has expired
-          if (oauth2Client.isTokenExpiring()) {
-            // Refresh the access token
-            const tokens = await oauth2Client.refreshAccessToken();
-            const newAccessToken = tokens.credentials.access_token;
-      
-            // Update the access token in the JWT cookie
-            const newToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-              expiresIn: '1h' // Adjust expiration time as needed
-            });
-      
-            res.cookie('access_token', newToken, { httpOnly: true });
-      
-            // Update credentials with the new access token
-            oauth2Client.setCredentials({ access_token: newAccessToken });
-          }
-       }
-       next()
-   }
-  })
-}
+      if (dbUser.isGoogleUser) {
+        // Set credentials with the refresh token
+        oauth2Client.setCredentials({ refresh_token: dbUser.refreshToken });
 
+        // Check if the access token has expired
+        if (oauth2Client.isTokenExpiring()) {
+          // Refresh the access token
+          const tokens = await oauth2Client.refreshAccessToken();
+          const newAccessToken = tokens.credentials.access_token;
+
+          // Update the access token in the JWT cookie
+          const newToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+            expiresIn: "1h", // Adjust expiration time as needed
+          });
+
+          res.cookie("access_token", newToken, { httpOnly: true });
+
+          // Update credentials with the new access token
+          oauth2Client.setCredentials({ access_token: newAccessToken });
+        }
+      }
+      next();
+    }
+  });
+};
 
 //   export const verifyToken = (req, res, next) => {
 //     const token = req.cookies.access_token
 //     if(!token){
 //      return res.status(401).json({ error: 'Error in access_token' });
 //  }
- 
+
 //     jwt.verify(token, process.env.JWT, (err, user) => {
 //      if (err){
-         
+
 //          return res.status(401).json({ error: 'Error in verifying token' });
 //      }
 //      else{
@@ -83,77 +78,93 @@ export const verifyToken = async (req, res, next) => {
 //     })
 //  }
 
-export const verifyCompanyToken = async(req, res, next) => {
-    const token = req.cookies.access_token_company
-    if(!token){
-        return res.status(401).json({ message: 'Error in access_token' });
-    }
- 
-    jwt.verify(token, process.env.JWT, async(err, company) => {
-     if (err){
-        return res.status(401).json({ message: 'Error in verifying token' });
-     }
-     else{
-         req.company = company
+export const verifyCompanyToken = async (req, res, next) => {
+  const token = req.cookies.access_token_company;
+  if (!token) {
+    return res.status(401).json({ message: "Error in access_token" });
+  }
 
-         console.log('company.id in verifyToken>>>>>>>', company.id);
-          if (company.isGoogleUser) {
-   
-             // Set credentials with the refresh token
-             oauth2Client.setCredentials({ refresh_token: company.refreshToken });
-     
-             // Check if the access token has expired
-             if (oauth2Client.isTokenExpiring()) {
-               // Refresh the access token
-               const tokens = await oauth2Client.refreshAccessToken();
-               const newAccessToken = tokens.credentials.access_token;
-         
-               // Update the access token in the JWT cookie
-               const newToken = jwt.sign({ id: company.id }, process.env.JWT_SECRET, {
-                 expiresIn: '1h' // Adjust expiration time as needed
-               });
-         
-               res.cookie('access_token', newToken, { httpOnly: true });
-         
-               // Update credentials with the new access token
-               oauth2Client.setCredentials({ access_token: newAccessToken });
-             }
-          }
-         next()
-     }
-    })
- }
+  jwt.verify(token, process.env.JWT, async (err, company) => {
+    if (err) {
+      return res.status(401).json({ message: "Error in verifying token" });
+    } else {
+      req.company = company;
 
- export const verifyDownloadToken = (req, res, next) => {
-   const token1 = req.cookies.access_token
-    const token2 = req.cookies.access_token_company
-    if(!token1 || !token2){
-        return res.status(401).json({ error: 'Error in access_token' });
-    }
+      console.log("company.id in verifyToken>>>>>>>", company.id);
+      if (company.isGoogleUser) {
+        // Set credentials with the refresh token
+        oauth2Client.setCredentials({ refresh_token: company.refreshToken });
 
-    if (token1) {
-        jwt.verify(token1, process.env.JWT, (err, user) => {
-            if (err){
-                
-                return res.status(401).json({ error: 'Error in verifying token' });
+        // Check if the access token has expired
+        if (oauth2Client.isTokenExpiring()) {
+          // Refresh the access token
+          const tokens = await oauth2Client.refreshAccessToken();
+          const newAccessToken = tokens.credentials.access_token;
+
+          // Update the access token in the JWT cookie
+          const newToken = jwt.sign(
+            { id: company.id },
+            process.env.JWT_SECRET,
+            {
+              expiresIn: "1h", // Adjust expiration time as needed
             }
-            else{
-                req.user = user
-                next()
-            }
-           })
-    }
+          );
 
-    if (token2) {        
-        jwt.verify(token2, process.env.JWT, (err, company) => {
-         if (err){
-            return res.status(401).json({ error: 'Error in verifying token' });
-         }
-         else{
-             req.company = company
-             next()
-         }
-        })
+          res.cookie("access_token", newToken, { httpOnly: true });
+
+          // Update credentials with the new access token
+          oauth2Client.setCredentials({ access_token: newAccessToken });
+        }
+      }
+      next();
     }
- 
- }
+  });
+};
+
+export const verifyDownloadToken = (req, res, next) => {
+  const token1 = req.cookies.access_token;
+  const token2 = req.cookies.access_token_company;
+  if (!token1 || !token2) {
+    return res.status(401).json({ error: "Error in access_token" });
+  }
+
+  if (token1) {
+    jwt.verify(token1, process.env.JWT, (err, user) => {
+      if (err) {
+        return res.status(401).json({ error: "Error in verifying token" });
+      } else {
+        req.user = user;
+        next();
+      }
+    });
+  }
+
+  if (token2) {
+    jwt.verify(token2, process.env.JWT, (err, company) => {
+      if (err) {
+        return res.status(401).json({ error: "Error in verifying token" });
+      } else {
+        req.company = company;
+        next();
+      }
+    });
+  }
+};
+
+export const VerifyAdminToken = async (req, res, next) => {
+  const token = req.cookies.access_token_admin;
+  if (!token) {
+    return res.status(401).json({ message: "Error in access_token" });
+  }
+
+  jwt.verify(token, process.env.JWT, async (err, admin) => {
+    if (err) {
+      return res.status(401).json({ message: "Error in verifying token" });
+    } else {
+      req.admin = admin;
+
+      console.log("admin.id in verifyToken>>>>>>>", admin.id);
+      next();
+    }
+  });
+};

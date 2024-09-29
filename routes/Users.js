@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  userBasicDetails,
   deleteUser,
   find,
   finduserbytoken,
@@ -15,14 +16,16 @@ import {
 } from "../controllers/Users.js";
 import { verifyCompanyToken, verifyToken } from "../verifyToken.js";
 import fast2sms from "fast-two-sms";
-import axios from 'axios'
+import axios from "axios";
 
 const router = express.Router();
+
+router.post("/userBasicDetails", verifyToken, userBasicDetails);
 
 //update
 router.put("/updateuser", verifyToken, updateUser);
 // router.put("/onboarding",  onboardUser);
-router.put("/onboarding", verifyToken,  onboardUser);
+router.put("/onboarding", verifyToken, onboardUser);
 
 router.put("/seminar", verifyToken, Seminar);
 router.get("/getseminaruser", getseminaruser);
@@ -62,8 +65,6 @@ router.post("/verifyemail", verifyUserEmail);
 
 //verifyOTP
 router.post("/verifyotp", verifyUserOtp);
-
-
 
 // router.post("/test", async (req, res) => {
 //   try {
