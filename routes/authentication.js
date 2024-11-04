@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  GoogleFirebase,
   forgetPassword,
   linkGoogleAccount,
   linkGoogleAccountCompany,
@@ -9,6 +10,7 @@ import {
   signinGoogle,
   signinadmin,
   signup,
+  forgetPasswordTrek,
 } from "../controllers/authentication.js";
 import { verifyCompanyToken, verifyToken } from "../verifyToken.js";
 
@@ -30,7 +32,9 @@ router.post(
 router.post("/logout", logout);
 
 router.post("/forgetPassword", forgetPassword);
+router.post("/forgetPasswordTrek", forgetPasswordTrek);
 router.post("/resetPassword/:token", resetPassword);
+router.post("/googleFirebase", GoogleFirebase);
 
 //google
 // router.post("/google-create-token", getOauthToken  )

@@ -61,21 +61,27 @@ export const signup = AsyncHandler(async (req, res) => {
     // }
 
     //send token via mail
-    const mailresponse = await sendEmail({
-      email: userEmail,
-      emailType: "VERIFY",
-      userId: savedUser._id,
-    });
+    // const mailresponse = await sendEmail({
+    //   email: userEmail,
+    //   emailType: "VERIFY",
+    //   userId: savedUser._id,
+    // });
 
-    console.log("mailresponse>>>>>>", mailresponse);
-    if (mailresponse) {
-      res
-        .status(200)
-        .json({ message: "Verification mail sent, please check your inbox" });
+    // console.log("mailresponse>>>>>>", mailresponse);
+    // if (mailresponse) {
+    //   res
+    //     .status(200)
+    //     .json({ message: "Verification mail sent, please check your inbox" });
+    // } else {
+    //   res
+    //     .status(500)
+    //     .json({ message: "an error occured during email verfication" });
+    // }
+    if (savedUser) {
+      // console.log("Saved User", savedUser.isVerfied)
+      return res.status(200).json({ message: "Account account Created" });
     } else {
-      res
-        .status(500)
-        .json({ message: "an error occured during email verfication" });
+      return res.status(404).json({ message: "Failed in creating account" });
     }
   } catch (err) {
     console.log(err);
@@ -420,6 +426,54 @@ export const forgetPassword = async (req, res) => {
   }
 };
 
+export const forgetPasswordTrek = async (req, res) => {
+  try {
+    // Find the user by email
+    const user = await Users.findOne({ email: req.body.email });
+
+    // If user not found, send error message
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // Generate a unique JWT token for the user that contains the user's id
+    const token = jwt.sign({ userId: user._id }, process.env.JWT, {
+      expiresIn: "60m",
+    });
+
+    // Send the token to the user's email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    // Email configuration
+    const mailOptions = {
+      from: process.env.EMAIL_USERNAME,
+      to: req.body.email,
+      subject: "Reset Password",
+      html: `<h1>Reset Your Password</h1>
+    <p>Click on the following link to reset your password:</p>
+    <a href="https://trekathon.frint.in/reset-password/${token}">https://trekathon.frint.in/reset-password</a>
+    <p>The link will expire in 10 minutes.</p>
+    <p>If you didn't request a password reset, please ignore this email.</p>`,
+    };
+
+    // Send the email
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        return res.status(500).send({ message: err.message });
+      }
+      res.status(200).send({ message: "Reset Link sent to Email" });
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 export const resetPassword = async (req, res) => {
   try {
     // Verify the token sent by the user
@@ -450,3 +504,35 @@ export const resetPassword = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
+
+export const GoogleFirebase = AsyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const existingUser = await Users.findOne({ email });
+    if (existingUser) {
+      const token = jwt.sign({ id: existingUser._id }, process.env.JWT, {
+        expiresIn: "24h", // Set an expiration time for the token if necessary
+      });
+      return res
+        .cookie("access_token", token, {
+          httpOnly: true, // Secure cookie settings
+        })
+        .status(200)
+        .json({ message: "Sign-in successful", user: existingUser, token });
+    } else {
+      const newUser = new Users({ ...req.body });
+      const savedUser = await newUser.save();
+      if (savedUser) {
+        return res.status(200).json({
+          message: "Account created successfully",
+        });
+      } else {
+        return res.status(404).json({ message: "Failed to create account" });
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});

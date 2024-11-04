@@ -18,24 +18,6 @@ const AdminSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    // internships: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Internship",
-    //   },
-    // ],
-    // companies: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Company",
-    //   },
-    // ],
-    // users: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "User",
-    //   },
-    // ],
   },
   { timestamps: true }
 );

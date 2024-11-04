@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import InternshipRouter from "./routes/Internship.js";
 import userRouter from "./routes/Users.js";
+import eventRouter from "./routes/Event.js";
 
 import phonepeRouter from "./routes/Phonepe.js";
 
@@ -29,11 +30,12 @@ const connect = async () => {
 app.use(
   cors({
     origin: [
-      "https://admin.frint.in",
+      "https://trekathon.frint.in",
+      "https://main.frint.in",
       "https://company.frint.in",
       "https://student.frint.in",
       "https://frint.in",
-      "https://www.admin.frint.in",
+      "https://www.main.frint.in",
       "https://www.company.frint.in",
       "https://www.student.frint.in",
       "https://www.frint.in",
@@ -51,6 +53,7 @@ app.use("/api/company", CompanyRouter);
 app.use("/api/internship", InternshipRouter);
 app.use("/api/user", userRouter);
 app.use("/api/phonepe", phonepeRouter);
+app.use("/api/event", eventRouter);
 
 connect();
 
