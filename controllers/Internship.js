@@ -2,7 +2,6 @@ import Users from "../models/Users.js";
 import Internship from "../models/Internship.js";
 import dotenv from "dotenv";
 import multer from "multer";
-import { Storage } from "@google-cloud/storage";
 
 import { v2 as cloudinary } from "cloudinary";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
@@ -10,9 +9,7 @@ import { ApiError } from "../utils/ApiError.js";
 import Company from "../models/Company.js";
 import { areRequiredFieldsFilled } from "../helpers/RequiredFields.js";
 import axios from 'axios'
-
-
-
+import { BlobServiceClient } from '@azure/storage-blob';
 
 dotenv.config();
 const upload = multer({
@@ -25,27 +22,9 @@ cloudinary.config({
   api_secret: process.env.api_secret,
 });
 
-//cloud storage connect
-const storageGoogle = new Storage({
-  projectId: process.env.GCP_PROJECT_ID,
-  credentials: {
-    type: process.env.GCP_TYPE,
-    project_id: process.env.GCP_PROJECT_ID,
-    private_key_id: process.env.GCP_PRIVATE_KEY_ID,
-    private_key: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    client_email: process.env.GCP_CLIENT_EMAIL,
-    client_id: process.env.GCP_CLIENT_ID,
-    // auth_uri: process.env.GCP_AUTH_URI,
-    // token_uri: process.env.GCP_TOKEN_URI,
-    // auth_provider_x509_cert_url: process.env.GCP_AUTH_PROVIDER_X509_CERT_URL,
-    // client_x509_cert_url: process.env.GCP_CLIENT_X509_CERT_URL,
-    universe_domain: process.env.GCP_UNIVERSE_DOMAIN,
-  },
-});
-
-//bucket initialization
-const bucketName = process.env.GCP_BUCKET_NAME;
-const bucket = storageGoogle.bucket(bucketName);
+// azure initialization
+const blobServiiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+const containerClient = blobServiiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME);
 
 // export const addInternship = AsyncHandler(async (req, res) => {
 //     try {
@@ -107,12 +86,9 @@ const bucket = storageGoogle.bucket(bucketName);
 // }
 // )
 
-//google cloud storage implementation
-
 export const addInternship = AsyncHandler(async (req, res) => {
   try {
     upload.single("image")(req, res, async function (err) {
-      // Error handling
       if (err instanceof multer.MulterError) {
         console.log("error in multer>>>>>>>>>>>>>");
         console.error(err);
@@ -132,68 +108,28 @@ export const addInternship = AsyncHandler(async (req, res) => {
       if (file) {
         console.log("req file>>>>>>>>>.", req.file);
 
-        // Google Cloud Storage
         const fileName = Date.now() + "-" + file.originalname;
+        const blockBlobClient = containerClient.getBlockBlobClient(fileName);
 
-        console.log("1");
-        const blob = bucket.file(fileName);
-
-        console.log("2");
-        const blobStream = blob.createWriteStream({
-          metadata: {
-            contentType: file.mimetype,
-          },
-          public: true,
-        });
-
-        console.log("3");
-
-        blobStream.on("error", (err) => {
-          console.log("4");
-          console.error("Blob stream error", err);
-          return res.status(500).send(`Error uploading file: ${err}`);
-        });
-
-        blobStream.on("finish", async () => {
-          console.log("5");
-
-          // Construct the public URL
-          publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-
-          // Create a new Internship with the image URL
-          const newInternship = new Internship({
-            imgurl: publicUrl,
-            ...req.body,
-            company: req.company.id,
-          });
-          const savedInternship = await newInternship.save();
-          res.status(200).json(savedInternship);
-
-          // Update the company with the new internship
-          const company = await Company.findByIdAndUpdate(
-            req.company.id,
-            { $push: { internships: savedInternship._id } },
-            { new: true }
-          );
-
-          if (!company) {
-            throw new Error("Company not found");
-          }
-        });
-
-        blobStream.end(file.buffer);
-      } else {
-        // No file uploaded, create internship without image URL
-        console.log("No file found, creating internship without image");
-
-        const newInternship = new Internship({
+        try {
+          await blockBlobClient.uploadData(file.buffer, {
+            blobHTTPHeaders: { blobContentType: file.mimetype },
+          })
+          publicUrl = blockBlobClient.url;
+          console.log("File uploaded to Azure Blob Storage:", publicUrl);
+        } catch (error) {
+          console.error("Azure Blob upload error:", error);
+          return res.status(500).send("Error uploading file to Azure Blob Storage");
+        }
+      }
+      try {
+        const newInternship = Internship({
+          imgurl: publicUrl,
           ...req.body,
           company: req.company.id,
-        });
+        })
         const savedInternship = await newInternship.save();
-        res.status(200).json(savedInternship);
-
-        // Update the company with the new internship
+        
         const company = await Company.findByIdAndUpdate(
           req.company.id,
           { $push: { internships: savedInternship._id } },
@@ -203,8 +139,14 @@ export const addInternship = AsyncHandler(async (req, res) => {
         if (!company) {
           throw new Error("Company not found");
         }
+
+        res.status(200).json(savedInternship);
+      } catch (error) {
+        console.error("Database save error:", error);
+        return res.status(500).json({ error: "Failed to save internship data" });
       }
     });
+
   } catch (err) {
     console.error(err);
     console.log("final error>>>>>>>>>>>>>>>>>");
@@ -222,9 +164,9 @@ export const deleteInternship = AsyncHandler(async (req, res) => {
 
     if (internship.imgurl) {
       try {
-        const filename = internship.imgurl.split("/").pop();
-        const file = bucket.file(filename);
-        await file.delete();
+        const filename = internship.imgurl?.split("/").pop();
+        const oldBlobClient = containerClient.getBlockBlobClient(filename);
+        oldBlobClient.deleteIfExists();
         console.log("image deleted from gsc successfully");
       } catch (err) {
         console.log("unable to delete image", err);
@@ -263,46 +205,40 @@ export const updateInternship = AsyncHandler(async (req, res) => {
       // Proceed with image update only if a new image file is uploaded
       if (newFile) {
         const internshipImgUrl = internship.imgurl;
-        const oldFileName = internshipImgUrl.split("/").pop();
+        const oldFileName = internshipImgUrl?.split("/").pop();
         const newFileName = Date.now() + "-" + newFile.originalname;
 
         try {
           // Delete the old file
-          const oldFile = bucket.file(oldFileName);
-          await oldFile.delete();
+          // const oldFile = bucket.file(oldFileName);
+          // await oldFile.delete();
+          if (oldFileName) {
+            const oldBlobClient = containerClient.getBlockBlobClient(oldFileName);
+            oldBlobClient.deleteIfExists();
+          }
 
-          // Upload the new file
-          const blob = bucket.file(newFileName);
-          const blobStream = blob.createWriteStream({
-            metadata: {
-              contentType: newFile.mimetype,
-            },
-            public: true,
-          });
+          const newBlobClient = containerClient.getBlockBlobClient(newFileName);
+          newBlobClient.uploadData(newFile.buffer, {
+            blobHTTPHeaders: { blobContentType: newFile.mimetype },
+          })
 
-          blobStream.on("error", (err) => {
-            return res.status(500).send(`Error uploading file: ${err}`);
-          });
+          const publicUrl = newBlobClient.url;
+          console.log("File uploaded to Azure Blob Storage:", publicUrl);
 
-          blobStream.on("finish", async () => {
-            // Construct the public URL
-            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
 
-            // Update internship with new image URL and other fields
-            const updatedInternship = await Internship.findByIdAndUpdate(
-              req.params.id,
-              { ...req.body, imgurl: publicUrl },
-              { new: true }
-            );
+          // Update internship with new image URL and other fields
+          const updatedInternship = await Internship.findByIdAndUpdate(
+            req.params.id,
+            { ...req.body, imgurl: publicUrl },
+            { new: true }
+          );
 
-            return res
-              .status(200)
-              .json({ message: "Internship updated successfully", updatedInternship });
-          });
+          return res
+            .status(200)
+            .json({ message: "Internship updated successfully", updatedInternship });
 
-          blobStream.end(newFile.buffer);
-        } catch (err) {
-          console.error("Error updating image:", err);
+        } catch (uploadErr) {
+          console.error("Error updating image:", uploadErr);
           return res.status(500).json({ error: "Failed to update image" });
         }
       } else {
