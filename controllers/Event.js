@@ -44,42 +44,78 @@ export const createGroup = async (req, res) => {
 export const updateGroup = async (req, res) => {
   const { teamId, teamName, teamLeadEmail, userEmails } = req.body;
 
+  // Validate required fields
+  if (!teamId) {
+    return res.status(400).json({ message: "Team ID is required" });
+  }
+
   try {
-    let team = await Event2.findOne({ teamId });
+    // Find the team by ID
+    const team = await Event2.findOne({ teamId });
     if (!team) {
       return res.status(404).json({ message: "Team not found" });
     }
 
-    if (teamName) team.teamName = teamName;
+    // Update team name if provided
+    if (teamName) {
+      team.teamName = teamName;
+    }
+
+    // Update team lead email if provided and different from current
     if (teamLeadEmail && teamLeadEmail !== team.teamLeadEmail) {
       team.teamLeadEmail = teamLeadEmail;
     }
 
     if (userEmails && Array.isArray(userEmails)) {
-      userEmails.forEach((email) => {
-        const existingMember = team.Members.find((m) => m.userEmail === email);
-        if (!existingMember && email !== team.teamLeadEmail) {
-          team.Members.push({
-            userEmail: email,
-            status: "pending",
+      // Validate each email in userEmails list
+      for (let email of userEmails) {
+        try {
+          // Check if the email is in another team
+          const isInAnotherTeam = await Event2.findOne({
+            "Members.userEmail": email,
+            teamId: { $ne: teamId }, // Exclude current team
+          });
+
+          if (isInAnotherTeam) {
+            return res.status(400).json({
+              message: `User with email ${email} is already in another team.`,
+            });
+          }
+
+          // Add to pending members if not already in team
+          const existingMember = team.Members.find((m) => m.userEmail === email);
+          if (!existingMember && email !== team.teamLeadEmail) {
+            team.Members.push({
+              userEmail: email,
+              status: "pending",
+            });
+          }
+        } catch (checkError) {
+          console.error(`Error checking email ${email}:`, checkError);
+          return res.status(500).json({
+            message: `Error checking email ${email}`,
+            error: checkError.message,
           });
         }
-      });
+      }
     }
 
+    // Save updated team
     const updatedTeam = await team.save();
     res.status(200).json({
       message: "Team updated successfully",
       team: updatedTeam,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error updating team:", error);
     res.status(500).json({
       message: "Error updating team",
       error: error.message,
     });
   }
 };
+
+
 
 export const inviteToGroup = async (req, res) => {
   const { teamId, userEmails } = req.body;

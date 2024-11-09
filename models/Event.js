@@ -19,4 +19,4 @@ const EventSchema = new mongoose.Schema(
 );
 
 
-export default mongoose.model("Event", EventSchema);
+export default mongoose.model("Trekathon", EventSchema);
