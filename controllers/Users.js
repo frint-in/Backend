@@ -5,8 +5,8 @@ import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
-import { Storage } from "@google-cloud/storage";
 
+import { BlobServiceClient } from '@azure/storage-blob';
 
 import { google} from 'googleapis'
 
@@ -28,27 +28,9 @@ cloudinary.config({
   api_secret: process.env.api_secret,
 });
 
-//cloud storage connect
-const storageGoogle = new Storage({
-  projectId: process.env.GCP_PROJECT_ID,
-  credentials: {
-    type: process.env.GCP_TYPE,
-    project_id: process.env.GCP_PROJECT_ID,
-    private_key_id: process.env.GCP_PRIVATE_KEY_ID,
-    private_key: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    client_email: process.env.GCP_CLIENT_EMAIL,
-    client_id: process.env.GCP_CLIENT_ID,
-    // auth_uri: process.env.GCP_AUTH_URI,
-    // token_uri: process.env.GCP_TOKEN_URI,
-    // auth_provider_x509_cert_url: process.env.GCP_AUTH_PROVIDER_X509_CERT_URL,
-    // client_x509_cert_url: process.env.GCP_CLIENT_X509_CERT_URL,
-    universe_domain: process.env.GCP_UNIVERSE_DOMAIN,
-  },
-});
-
-//bucket initialization
-const bucketName = process.env.GCP_BUCKET_NAME;
-const bucket = storageGoogle.bucket(bucketName);
+// azure initialization
+const blobServiiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+const containerClient = blobServiiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME);
 
 // export const getDownloadUrl = async (req, res) => {
 //   const filename = req.params.filename
@@ -322,39 +304,38 @@ export const updateUser = async (req, res) => {
         if (previousFile) {
           const oldFileName = previousFile.split("/").pop();
           console.log("oldFileName>>>>>>>>", oldFileName);
-          const oldFile = bucket.file(oldFileName);
-          const [exists] = await oldFile.exists();
-          if (exists) {
-            await oldFile.delete();
+          const oldBlob = containerClient.getBlockBlobClient(oldFileName);
+
+            
+          try {
+            await oldBlob.getProperties(); // Check if the blob exists
+            await oldBlob.delete();
             console.log("Old file deleted successfully", previousFile);
-          } else {
-            console.log(`${type} not found in GCS bucket:`, previousFile);
+          } catch (error) {
+            if (error.statusCode === 404) {
+              console.log(`${type} not found in Azure blob container:`, previousFile);
+            } else {
+              console.error(`Error checking existence of ${type}:`, error);
+              throw error;
+            }
           }
         }
 
         const newFileName = Date.now() + "-" + file[0].originalname;
-        const blob = bucket.file(newFileName);
-        const blobStream = blob.createWriteStream({
-          metadata: {
-            contentType: file[0].mimetype,
-          },
-          public: true,
-        });
-
-        return new Promise((resolve, reject) => {
-          blobStream.on("error", (err) => {
-            console.error(`${type} blob stream error`, err);
-            reject(err);
-          });
-
-          blobStream.on("finish", () => {
-            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+        const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
+        return new Promise(async (resolve, reject) => {
+          try {
+            await blockBlobClient.uploadData(file[0].buffer, {
+              blobHTTPHeaders: { blobContentType: file[0].mimetype },
+            });
+            const publicUrl = `${blockBlobClient.url}`;
             updates[type === 'profileImg' ? 'avatar' : 'resume'] = publicUrl;
             console.log(`finished uploading ${type}>>>>>>>`, publicUrl);
             resolve();
-          });
-
-          blobStream.end(file[0].buffer);
+          } catch (err) {
+            console.error(`${type} upload error`, err);
+            reject(err);
+          }
         });
       } else {
         console.log(`No ${type} uploaded`);
@@ -465,39 +446,37 @@ export const onboardUser = async (req, res) => {
         if (previousFile) {
           const oldFileName = previousFile.split("/").pop();
           console.log("oldFileName>>>>>>>>", oldFileName);
-          const oldFile = bucket.file(oldFileName);
-          const [exists] = await oldFile.exists();
-          if (exists) {
-            await oldFile.delete();
+          const oldBlob = containerClient.getBlockBlobClient(oldFileName);
+          try {
+            await oldBlob.getProperties(); // Check if the blob exists
+            await oldBlob.delete();
             console.log("Old file deleted successfully", previousFile);
-          } else {
-            console.log(`${type} not found in GCS bucket:`, previousFile);
+          } catch (error) {
+            if (error.statusCode === 404) {
+              console.log(`${type} not found in Azure blob container:`, previousFile);
+            } else {
+              console.error(`Error checking existence of ${type}:`, error);
+              throw error;
+            }
           }
         }
 
         const newFileName = Date.now() + "-" + file[0].originalname;
-        const blob = bucket.file(newFileName);
-        const blobStream = blob.createWriteStream({
-          metadata: {
-            contentType: file[0].mimetype,
-          },
-          public: true,
-        });
+        const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
 
-        return new Promise((resolve, reject) => {
-          blobStream.on("error", (err) => {
-            console.error(`${type} blob stream error`, err);
-            reject(err);
-          });
-
-          blobStream.on("finish", () => {
-            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+        return new Promise(async (resolve, reject) => {
+          try {
+            await blockBlobClient.uploadData(file[0].buffer, {
+              blobHTTPHeaders: { blobContentType: file[0].mimetype },
+            });
+            const publicUrl = `${blockBlobClient.url}`;
             updates[type === 'profileImg' ? 'avatar' : 'resume'] = publicUrl;
             console.log(`finished uploading ${type}>>>>>>>`, publicUrl);
             resolve();
-          });
-
-          blobStream.end(file[0].buffer);
+          } catch (err) {
+            console.error(`${type} upload error`, err);
+            reject(err);
+          }
         });
       } else {
         console.log(`No ${type} uploaded`);
