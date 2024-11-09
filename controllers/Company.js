@@ -16,8 +16,10 @@ import Users from "../models/Users.js";
 
 import { google } from "googleapis";
 import { SpacesServiceClient } from "@google-apps/meet";
-import { Storage } from "@google-cloud/storage";
 import { sendEmailMain } from "../helpers/mailer.js";
+
+
+import { BlobServiceClient } from '@azure/storage-blob';
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -38,23 +40,9 @@ cloudinary.config({
   api_secret: process.env.api_secret,
 });
 
-//cloud storage connect
-const storageGoogle = new Storage({
-  projectId: process.env.GCP_PROJECT_ID,
-  credentials: {
-    type: process.env.GCP_TYPE,
-    project_id: process.env.GCP_PROJECT_ID,
-    private_key_id: process.env.GCP_PRIVATE_KEY_ID,
-    private_key: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    client_email: process.env.GCP_CLIENT_EMAIL,
-    client_id: process.env.GCP_CLIENT_ID,
-    universe_domain: process.env.GCP_UNIVERSE_DOMAIN,
-  },
-});
-
-//bucket initialization
-const bucketName = process.env.GCP_BUCKET_NAME;
-const bucket = storageGoogle.bucket(bucketName);
+// azure initialization
+const blobServiiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+const containerClient = blobServiiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME);
 
 cloudinary.config({
   cloud_name: process.env.cloud_name,
@@ -88,27 +76,11 @@ export const signupCompany = AsyncHandler(async (req, res) => {
       let imgurl = "";
       if (Img) {
         const newFileName = Date.now() + "-" + Img.originalname;
-        const blob = bucket.file(newFileName);
-        const blobStream = blob.createWriteStream({
-          metadata: {
-            contentType: Img.mimetype,
-          },
-          public: true,
-        });
-
-        await new Promise((resolve, reject) => {
-          blobStream.on("error", (error) => {
-            console.error("Blob stream error", error);
-            return res.status(500).json({ message: "Error uploading file. Please try again" });
-          });
-
-          blobStream.on("finish", () => {
-            imgurl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
-            resolve();  // Resolve the promise when upload is complete
-          });
-
-          blobStream.end(Img.buffer);
-        });
+        const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
+        await blockBlobClient.uploadData(Img.buffer, {
+          blobHTTPHeaders: { blobContentType: Img.mimetype },
+        })
+        imgurl = `${blockBlobClient.url}`;
       } else {
         console.log("No profile image uploaded");
       }
@@ -202,33 +174,33 @@ export const updateCompany = AsyncHandler(async (req, res) => {
         if (previousImg) {
           const oldFileName = previousImg.split("/").pop();
           console.log("oldFilename>>>>>>>>", oldFileName);
-          const oldFile = bucket.file(oldFileName);
-          await oldFile.delete();
-          console.log("old file deleted successfully", previousImg);
+          const oldBlob = containerClient.getBlockBlobClient(oldFileName);
+          try {
+            await oldBlob.delete();
+            console.log("Old file deleted successfully", previousImg);
+          } catch (error) {
+            if (error.statusCode === 404) {
+              console.log(`Old file ${oldFileName} not found in Azure blob container.`);
+            } else {
+              console.error("Error deleting old file:", error);
+              return res.status(500).json({ message: "Error deleting old file" });
+            }
+          }
         }
 
         const newFileName = Date.now() + "-" + profileImg.originalname;
-        const blob = bucket.file(newFileName);
-        const blobStream = blob.createWriteStream({
-          metadata: {
-            contentType: profileImg.mimetype,
-          },
-          public: true,
-        });
-
-        blobStream.on("error", (err) => {
-          console.error("Blob stream error", err);
-          return res
-            .status(500)
-            .json({ message: `Error uploading file. Please try again` });
-        });
-
-        blobStream.on("finish", async () => {
-          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${newFileName}`;
+        try {
+          const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
+          await blockBlobClient.uploadData(profileImg.buffer, {
+            blobHTTPHeaders: { blobContentType: profileImg.mimetype },
+          });
+          const publicUrl = blockBlobClient.url;
           updates.imgurl = publicUrl;
-        });
-
-        blobStream.end(profileImg.buffer);
+          console.log("Finished uploading new image", publicUrl);
+        } catch (err) {
+          console.error("Error uploading new image", err);
+          return res.status(500).json({ message: "Error uploading file. Please try again" });
+        }
       } else {
         console.log("No profile image uploaded");
       }
