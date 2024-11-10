@@ -83,6 +83,7 @@ export const signupCompany = AsyncHandler(async (req, res) => {
         imgurl = `${blockBlobClient.url}`;
       } else {
         console.log("No profile image uploaded");
+        return res.status(500).json({ error: "No profile image uploaded" });
       }
 
       // Hash the password
@@ -110,7 +111,7 @@ export const signupCompany = AsyncHandler(async (req, res) => {
 //signin
 
 export const signinCompany = AsyncHandler(async (req, res) => {
-  try {
+  try { 
     const company = await Company.findOne({ email: req.body.email });
     if (!company) {
       throw new ApiError(409, "incorrect email");
