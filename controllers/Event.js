@@ -66,20 +66,34 @@ export const updateGroup = async (req, res) => {
       team.teamLeadEmail = teamLeadEmail;
     }
 
+    // Track skipped emails and successfully added emails
+    const skippedEmails = [];
+    const addedEmails = [];
+
     if (userEmails && Array.isArray(userEmails)) {
-      // Validate each email in userEmails list
+      // Process each email in userEmails list
       for (let email of userEmails) {
         try {
+          // Check if the email is a team lead in any team
+          const isTeamLead = await Event2.findOne({
+            teamLeadEmail: email
+          });
+
+          if (isTeamLead) {
+            skippedEmails.push(email);
+            continue;
+          }
+
           // Check if the email is in another team
           const isInAnotherTeam = await Event2.findOne({
             "Members.userEmail": email,
             teamId: { $ne: teamId }, // Exclude current team
           });
 
+          // Skip if email is in another team
           if (isInAnotherTeam) {
-            return res.status(400).json({
-              message: `User with email ${email} is already in another team.`,
-            });
+            skippedEmails.push(email);
+            continue;
           }
 
           // Add to pending members if not already in team
@@ -89,23 +103,36 @@ export const updateGroup = async (req, res) => {
               userEmail: email,
               status: "pending",
             });
+            addedEmails.push(email);
           }
         } catch (checkError) {
           console.error(`Error checking email ${email}:`, checkError);
-          return res.status(500).json({
-            message: `Error checking email ${email}`,
-            error: checkError.message,
-          });
+          skippedEmails.push(email);
         }
       }
     }
 
     // Save updated team
     const updatedTeam = await team.save();
-    res.status(200).json({
+
+    // Prepare response message
+    const responseMessage = {
       message: "Team updated successfully",
       team: updatedTeam,
-    });
+      updates: {
+        addedMembers: addedEmails,
+        skippedMembers: skippedEmails,
+        skippedReasons: skippedEmails.length > 0 ? 
+          "Emails were skipped because they are either team leads or already members in other teams" : null
+      },
+    };
+
+    // Add explanation for skipped emails if any
+    if (skippedEmails.length > 0) {
+      responseMessage.message += ` (${skippedEmails.length} email(s) skipped)`;
+    }
+
+    res.status(200).json(responseMessage);
   } catch (error) {
     console.error("Error updating team:", error);
     res.status(500).json({
