@@ -776,3 +776,109 @@ export const verifyUserOtp = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const updateEducationAndSkills = async (req, res) => {
+  try {
+    // Find the user first
+    const user = await Users.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Handle file upload using multer
+    await new Promise((resolve, reject) => {
+      upload.fields([
+        { name: "resume", maxCount: 1 },
+      ])(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+          console.error(err);
+          return reject({ status: 409, message: "Failed to add file" });
+        } else if (err) {
+          console.error(err);
+          return reject({ status: 409, message: "internal server error" });
+        }
+        resolve();
+      });
+    });
+
+    const { college, department, yearOfPassing, address, skills, preferences } = req.body;
+    const resume = req.files?.["resume"];
+    
+    // Only include fields that are provided in the request
+    const updates = {};
+    
+    if (college) updates['education.graduation.college'] = college;
+    if (department) updates['education.graduation.department'] = department;
+    if (yearOfPassing) updates['education.graduation.yearOfPassing'] = yearOfPassing;
+    if (address) updates.address = address;
+    if (skills) updates.skills = Array.isArray(skills) ? skills : JSON.parse(skills);
+    if (preferences) updates.preferences = Array.isArray(preferences) ? preferences : JSON.parse(preferences);
+
+    // Handle resume upload if provided
+    if (resume) {
+      const uploadFile = async (file) => {
+        const previousFile = user.resume;
+        if (previousFile) {
+          const oldFileName = previousFile.split("/").pop();
+          console.log("oldFileName>>>>>>>>", oldFileName);
+          const oldBlob = containerClient.getBlockBlobClient(oldFileName);
+          try {
+            await oldBlob.getProperties();
+            await oldBlob.delete();
+            console.log("Old file deleted successfully", previousFile);
+          } catch (error) {
+            if (error.statusCode === 404) {
+              console.log("Resume not found in Azure blob container:", previousFile);
+            } else {
+              console.error("Error checking existence of resume:", error);
+              throw error;
+            }
+          }
+        }
+
+        const newFileName = Date.now() + "-" + file[0].originalname;
+        const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
+
+        await blockBlobClient.uploadData(file[0].buffer, {
+          blobHTTPHeaders: { blobContentType: file[0].mimetype },
+        });
+        const publicUrl = `${blockBlobClient.url}`;
+        updates.resume = publicUrl;
+        console.log("finished uploading resume>>>>>>>", publicUrl);
+      };
+
+      await uploadFile(resume);
+    }
+
+    // Only update if there are fields to update
+    if (Object.keys(updates).length > 0) {
+      const updatedUser = await Users.findByIdAndUpdate(
+        req.user.id,
+        { $set: updates },
+        { new: true, runValidators: true }
+      ).lean();
+
+      delete updatedUser.password;
+      delete updatedUser.refreshToken;
+
+      res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        user: updatedUser
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "No fields provided for update"
+      });
+    }
+
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update profile",
+      error: error.message
+    });
+  }
+};

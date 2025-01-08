@@ -11,9 +11,12 @@ const EventSchema = new mongoose.Schema(
         status: { type: String },
       },
     ],
+    preferredProblemStatement: { type: [String] },
     problemStatement: { type: String },
+    summary: { type: String },
     githubRepo: { type: String },
     youtubeLink: { type: String },
+    hostedLink: { type: String },
   },
   { timestamps: true }
 );

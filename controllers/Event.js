@@ -1,6 +1,9 @@
 import Event2 from "../models/Event.js";
 import { v4 as uuidv4 } from "uuid";
 import Users from "../models/Users.js";
+import EventCompany from "../models/EventCompany.js";
+import { sendCompanyInterestConfirmationEmail, sendTeamCreationEmail, sendTeamDeletionEmail, sendTeamInvitationEmail } from '../helpers/trekathonMail.js';
+import TrekPS from "../models/TrekPS.js";
 
 export const createGroup = async (req, res) => {
   const { email } = req.body;
@@ -28,6 +31,7 @@ export const createGroup = async (req, res) => {
     });
 
     const savedTeam = await newTeam.save();
+    await sendTeamCreationEmail(savedTeam);
     res.status(201).json({
       message: "Team created successfully",
       team: savedTeam,
@@ -103,6 +107,7 @@ export const updateGroup = async (req, res) => {
               userEmail: email,
               status: "pending",
             });
+            await sendTeamInvitationEmail(email, team);
             addedEmails.push(email);
           }
         } catch (checkError) {
@@ -403,6 +408,11 @@ export const deleteGroup = async (req, res) => {
     if (!deletedGroup) {
       return res.status(404).json({ message: "Group not found" });
     }
+    const allEmails = [
+      deletedGroup.teamLeadEmail,
+      ...deletedGroup.Members.map(member => member.userEmail)
+    ];
+    await sendTeamDeletionEmail(deletedGroup, allEmails);
     res
       .status(200)
       .json({ message: "Group deleted successfully", deletedGroup });
@@ -411,5 +421,294 @@ export const deleteGroup = async (req, res) => {
     res
       .status(500)
       .json({ message: "An error occurred while deleting the group" });
+  }
+};
+
+
+export const postCompanyInterest = async (req, res) => {
+  try {
+    const companyInterest = new EventCompany(req.body);
+    const savedCompanyInterest = await companyInterest.save();
+    
+    // Send confirmation email
+    await sendCompanyInterestConfirmationEmail(req.body);
+
+    res.status(201).json({
+      success: true,
+      message: "Message Sent successfully",
+      data: savedCompanyInterest,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to Send Message",
+      error: error.message,
+    });
+  }
+};
+
+export const addPreferredProblemStatement = async (req, res) => {
+  const { teamId, preferredProblemStatement } = req.body;
+  try {
+    const team = await Event2.findOne({ teamId });
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    // Check if team already has a confirmed problem statement
+    if (team.problemStatement) {
+      return res.status(400).json({ 
+        message: "Cannot add preferred problem statements after confirming one" 
+      });
+    }
+
+    // Create a new Set to handle duplicates
+    const uniqueStatements = new Set([
+      ...(team.preferredProblemStatement || []),
+      ...preferredProblemStatement
+    ]);
+
+    // Convert back to array
+    const updatedStatements = Array.from(uniqueStatements);
+
+    // Check if total length exceeds 3
+    if (updatedStatements.length > 3) {
+      return res.status(400).json({ 
+        message: "Maximum 3 preferred problem statements allowed per team" 
+      });
+    }
+
+    // Update the team's preferred statements
+    team.preferredProblemStatement = updatedStatements;
+    await team.save();
+    
+    res.status(200).json({ 
+      message: "Problem Statement added to wishlist",
+      preferredProblemStatement: team.preferredProblemStatement
+    });
+  } catch (error) {
+    console.error("Error updating preferred problem statements:", error);
+    res.status(500).json({ 
+      message: "An error occurred while updating preferred problem statements" 
+    });
+  }
+};
+
+export const removePreferredProblemStatement = async (req, res) => {
+  const { teamId, problemStatement } = req.body;
+  try {
+    const team = await Event2.findOne({ teamId });
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    team.preferredProblemStatement = team.preferredProblemStatement.filter(
+      (statement) => statement !== problemStatement
+    );
+    
+    await team.save();
+    res.status(200).json({ 
+      message: "Problem statement removed successfully",
+      preferredProblemStatement: team.preferredProblemStatement
+    });
+  } catch (error) {
+    console.error("Error removing problem statement:", error);
+    res.status(500).json({ 
+      message: "An error occurred while removing the problem statement" 
+    });
+  }
+};
+
+export const confirmProblemStatement = async (req, res) => {
+  const { teamId, problemStatement } = req.body;
+  try {
+    const team = await Event2.findOne({ teamId });
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    // Check if the problem statement exists in preferred list
+    if (!team.preferredProblemStatement.includes(problemStatement)) {
+      return res.status(400).json({ 
+        message: "Selected problem statement is not in your preferred list" 
+      });
+    }
+
+    // Check if 12 teams have already confirmed this specific problem statement
+    const teamsWithSamePS = await Event2.countDocuments({ 
+      problemStatement: problemStatement 
+    });
+
+    if (teamsWithSamePS >= 12) {
+      return res.status(400).json({
+        message: "This problem statement has reached its maximum limit of 12 teams and is now locked"
+      });
+    }
+
+    // Update the confirmed problem statement
+    team.problemStatement = problemStatement;
+    
+    // Clear the preferred problem statements after confirmation
+    team.preferredProblemStatement = [];
+    
+    await team.save();
+    
+    res.status(200).json({ 
+      message: "Problem statement confirmed successfully",
+      team,
+      remainingSlots: 12 - (teamsWithSamePS + 1)
+    });
+  } catch (error) {
+    console.error("Error confirming problem statement:", error);
+    res.status(500).json({ 
+      message: "An error occurred while confirming the problem statement" 
+    });
+  }
+};
+
+export const getProblemStatementCounts = async (req, res) => {
+  try {
+    // Get all teams
+    const teams = await Event2.find({});
+    
+    // Initialize counters
+    const counts = {
+      preferred: {
+        total: 0,
+        byStatement: {}
+      },
+      confirmed: {
+        total: 0,
+        byStatement: {}
+      }
+    };
+    
+    // Count preferred problem statements
+    teams.forEach(team => {
+      if (team.preferredProblemStatement && Array.isArray(team.preferredProblemStatement)) {
+        team.preferredProblemStatement.forEach(statement => {
+          counts.preferred.total++;
+          counts.preferred.byStatement[statement] = (counts.preferred.byStatement[statement] || 0) + 1;
+        });
+      }
+      
+      // Count confirmed problem statements
+      if (team.problemStatement) {
+        counts.confirmed.total++;
+        counts.confirmed.byStatement[team.problemStatement] = 
+          (counts.confirmed.byStatement[team.problemStatement] || 0) + 1;
+      }
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: "Problem statement counts retrieved successfully",
+      counts
+    });
+    
+  } catch (error) {
+    console.error("Error getting problem statement counts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get problem statement counts",
+      error: error.message
+    });
+  }
+};
+
+export const postProblemStatement = async (req, res) => {
+  const { 
+    title, 
+    description, 
+    requirements, 
+    considerations, 
+    domain,
+    difficulty,
+    expectedDuration,
+    resources,
+    tags 
+  } = req.body;
+  
+  try {
+    // Validate required fields
+    if (!title || !description || !requirements || !domain || !difficulty || !expectedDuration) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
+
+    // Validate requirements structure
+    if (!requirements.objectives || !requirements.technicalRequirements || !requirements.deliverables) {
+      return res.status(400).json({
+        success: false,
+        message: "Requirements must include objectives, technicalRequirements, and deliverables"
+      });
+    }
+
+    // Create new problem statement
+    const problemStatement = new TrekPS({
+      title,
+      description,
+      requirements: {
+        objectives: requirements.objectives,
+        technicalRequirements: requirements.technicalRequirements,
+        deliverables: requirements.deliverables
+      },
+      considerations: considerations || [],
+      domain,
+      difficulty,
+      expectedDuration,
+      resources: resources || [],
+      tags: tags || [],
+      status: 'active'
+    });
+
+    // Save to database
+    const savedProblemStatement = await problemStatement.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Problem statement created successfully",
+      data: savedProblemStatement
+    });
+
+  } catch (error) {
+    console.error("Error creating problem statement:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create problem statement",
+      error: error.message
+    });
+  }
+};
+
+export const getAllProblemStatements = async (req, res) => {
+  try {
+    const { domain, difficulty, status } = req.query;
+    
+    // Build filter object based on query parameters
+    const filter = {};
+    if (domain) filter.domain = domain;
+    if (difficulty) filter.difficulty = difficulty;
+    if (status) filter.status = status;
+
+    const problemStatements = await TrekPS.find(filter)
+      .select('-__v')
+      .sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      message: "Problem statements retrieved successfully",
+      count: problemStatements.length,
+      data: problemStatements
+    });
+  } catch (error) {
+    console.error("Error fetching problem statements:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch problem statements",
+      error: error.message
+    });
   }
 };

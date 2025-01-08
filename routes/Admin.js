@@ -12,6 +12,8 @@ import {
   getInternshipById,
   getCompanyById,
   getUserById,
+  getCompanyInterest,
+  getGroups
 } from "../controllers/Admin.js";
 import { VerifyAdminToken } from "../verifyToken.js";
 
@@ -31,6 +33,9 @@ router.get("/getInternshipByCompany/:id", VerifyAdminToken, getInternshipByCompa
 router.get("/getAllUsers", VerifyAdminToken, getUser);
 router.get("/getUserById/:id", VerifyAdminToken, getUserById);
 router.get("/getInternshipByUser/:id", VerifyAdminToken, getInternshipByUser);
+
+router.get("/getCompanyInterest", VerifyAdminToken, getCompanyInterest);  
+router.get("/getGroups", VerifyAdminToken, getGroups);  
 
 router.get("/getLengths", VerifyAdminToken, getLength);
 

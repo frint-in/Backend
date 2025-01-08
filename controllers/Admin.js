@@ -6,6 +6,8 @@ import Company from "../models/Company.js";
 import User from "../models/Users.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
+import EventCompany from "../models/EventCompany.js";
+import Event from "../models/Event.js";
 
 export const signupAdmin = AsyncHandler(async (req, res) => {
   try {
@@ -189,13 +191,72 @@ export const getLength = async (req, res) => {
     const intLength = await Internship.countDocuments();
     const userLength = await User.countDocuments();
     const comLength = await Company.countDocuments();
+    const groupLength = await Event.countDocuments();
     res.status(200).json({
       internships: intLength,
       users: userLength,
       companies: comLength,
+      groups: groupLength,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+export const getCompanyInterest = async (req, res) => {
+  try {
+    const companies = await EventCompany.find(); // Fetch all companies
+    res.status(200).json({
+      success: true,
+      message: "Companies fetched successfully",
+      data: companies,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch companies",
+      error: error.message,
+    });
+  }
+};
+
+export const getGroups = async (req, res) => {
+  try {
+    const groups = await Event.find();    
+    const teamLeadEmails = groups.map(group => group.teamLeadEmail);
+    const teamLeaders = await User.find(
+      { email: { $in: teamLeadEmails } },
+      { uname: 1, phno: 1, email: 1, address: 1, education: 1, skills: 1, resume: 1, preferences: 1 }
+    );
+    const teamLeaderMap = teamLeaders.reduce((acc, leader) => {
+      acc[leader.email] = {
+        uname: leader.uname,
+        phno: leader.phno,
+        address: leader.address,
+        education: leader.education,
+        skills: leader.skills,
+        resume: leader.resume,
+        preferences: leader.preferences,
+      };
+      return acc;
+    }, {});
+    const groupsWithLeaderDetails = groups.map(group => ({
+      ...group.toObject(),
+      teamLeader: teamLeaderMap[group.teamLeadEmail] || null
+    }));
+    res.status(200).json({
+      success: true,
+      message: "Groups fetched successfully",
+      data: groupsWithLeaderDetails
+    });
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch groups",
+      error: error.message
+    });
   }
 };

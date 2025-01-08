@@ -11,6 +11,7 @@ import {
   signinadmin,
   signup,
   forgetPasswordTrek,
+  Welcome,
 } from "../controllers/authentication.js";
 import { verifyCompanyToken, verifyToken } from "../verifyToken.js";
 
@@ -35,6 +36,8 @@ router.post("/forgetPassword", forgetPassword);
 router.post("/forgetPasswordTrek", forgetPasswordTrek);
 router.post("/resetPassword/:token", resetPassword);
 router.post("/googleFirebase", GoogleFirebase);
+
+router.post("/welcome", Welcome);
 
 //google
 // router.post("/google-create-token", getOauthToken  )

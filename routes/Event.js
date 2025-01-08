@@ -12,7 +12,14 @@ import {
   updateGroup,
   deleteGroup,
   rejectGroup,
+  postCompanyInterest,
+  addPreferredProblemStatement,
+  removePreferredProblemStatement,
+  confirmProblemStatement,
   // groupSubmission,
+  getProblemStatementCounts,
+  postProblemStatement,
+  getAllProblemStatements,
 } from "../controllers/Event.js";
 
 const router = express.Router();
@@ -34,5 +41,16 @@ router.get("/getUserDetail/:id", verifyToken, getUserDetail); //get user details
 router.get("/getGroupDetail/:id", verifyToken, getGroupDetail); //get full group details
 
 router.get("/getGroups/:id", verifyToken, getGroups); //get full group details
+
+router.post("/postCompanyInterest", postCompanyInterest); // Route for Company interest in trekathon
+
+router.post("/addPreferredProblemStatement", addPreferredProblemStatement); // Route for adding preferred problem statement
+router.post("/removePreferredProblemStatement", removePreferredProblemStatement); // Route for removing preferred problem statement
+router.post("/confirmProblemStatement", confirmProblemStatement); // Route for confirming problem statement
+
+router.get("/getProblemStatementCounts", getProblemStatementCounts); // Route for getting PS counts
+
+router.post("/postProblemStatement", postProblemStatement); // Route for posting new problem statement
+router.get("/getAllProblemStatements", getAllProblemStatements); // Route for getting all problem statements
 
 export default router;

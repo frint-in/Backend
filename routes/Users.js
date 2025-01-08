@@ -13,6 +13,7 @@ import {
   verifyUserEmail,
   verifyUserOtp,
   onboardUser,
+  updateEducationAndSkills,
 } from "../controllers/Users.js";
 import { verifyCompanyToken, verifyToken } from "../verifyToken.js";
 import fast2sms from "fast-two-sms";
@@ -105,5 +106,7 @@ router.post("/verifyotp", verifyUserOtp);
 //     res.status(400).json({ message: `something is wrong>>>>>>>> ${err}` });
 //   }
 // });
+
+router.post("/update-education-skills", verifyToken, updateEducationAndSkills);
 
 export default router;

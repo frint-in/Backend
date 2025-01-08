@@ -536,3 +536,80 @@ export const GoogleFirebase = AsyncHandler(async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+export const Welcome = AsyncHandler(async (req, res) => {
+  try {
+    const { email, password, phno, ...otherDetails } = req.body;
+    
+    // Find if user exists
+    const existingUser = await Users.findOne({ email });
+
+    // If user exists, verify and send token
+    if (existingUser) {
+      // Verify password
+      const isCorrect = await bcrypt.compare(
+        password.toString(),
+        existingUser.password
+      );
+
+      if (!isCorrect) {
+        throw new ApiError(409, "incorrect password");
+      }
+
+      if (!existingUser.isVerfied) {
+        return res.status(401).json({ message: "please verify your account" });
+      }
+
+      const { password: userPassword, ...others } = existingUser._doc;
+      const token = jwt.sign({ id: existingUser._id }, process.env.JWT);
+
+      return res
+        .cookie("access_token", token, {
+          httpOnly: true,
+        })
+        .status(200)
+        .json({ 
+          message: "Welcome back! Logged in successfully",
+          user: others, 
+          token 
+        });
+    }
+
+    // If user doesn't exist, create new account
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(password.toString(), salt);
+
+    const newUser = new Users({ 
+      email,
+      password: hash,
+      phno,
+      ...otherDetails
+    });
+
+    const savedUser = await newUser.save();
+
+    if (savedUser) {
+      const { password: userPassword, ...others } = savedUser._doc;
+      const token = jwt.sign({ id: savedUser._id }, process.env.JWT);
+
+      return res
+        .cookie("access_token", token, {
+          httpOnly: true,
+        })
+        .status(201)
+        .json({
+          message: "Welcome! Account created successfully",
+          user: others,
+          token
+        });
+    } else {
+      return res.status(400).json({ message: "Failed to create account" });
+    }
+
+  } catch (err) {
+    console.log(err);
+    res.status(err.statusCode || 500).json({
+      message: err.message || "An error occurred during authentication"
+    });
+  }
+});

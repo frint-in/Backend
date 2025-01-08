@@ -29,6 +29,9 @@ const EducationSchema = new mongoose.Schema({
     college: { type: String },
     university: { type: String },
     percentage: { type: String },
+    department: { type: String },
+    yearOfPassing: { type: String },
+
     // total: { type: String }
   },
   // extraCertifications: { type: String }
@@ -99,7 +102,7 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
+    address: { type: String },
     resetpassToken: {
       type: String,
     },
@@ -128,6 +131,9 @@ const UserSchema = new mongoose.Schema(
     },
     refreshToken: {
       type: String,
+    },
+    preferences: {
+      type: [String],
     },
   },
   {
